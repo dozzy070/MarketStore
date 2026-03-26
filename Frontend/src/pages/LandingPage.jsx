@@ -341,20 +341,60 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Features Section (unchanged) */}
-      <section className="py-5 bg-light">
-        <Container>
-          <Row className="g-4">
-            {[{ icon: FaTruck, title: 'Free Shipping', desc: 'On orders over ₦50,000' }, { icon: FaUndo, title: 'Easy Returns', desc: '30-day return policy' }, { icon: FaShieldAlt, title: 'Secure Payment', desc: '100% secure transactions' }, { icon: FaHeadset, title: '24/7 Support', desc: 'Dedicated customer service' }].map((feat, i) => (
-              <Col md={3} key={i}>
-                <Card className="border-0 bg-transparent text-center">
-                  <Card.Body><div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3"><feat.icon className="text-primary" size={24} /></div><h6>{feat.title}</h6><p className="text-muted small">{feat.desc}</p></Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </Container>
-      </section>
+      {/* Features Section with Horizontal Scroll on Mobile */}
+<section className="py-5 position-relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #eef2f6 100%)' }}>
+  <Container fluid className="px-3">
+    <div className="horizontal-scroll-features d-flex gap-3 justify-content-start justify-content-lg-center">
+      {/* Free Shipping */}
+      <div className="feature-card text-center p-3 rounded-5 position-relative overflow-hidden shipping-card" style={{ minWidth: '150px', flex: '0 0 auto' }}>
+        <div className="feature-image position-absolute top-0 start-0 w-100 h-100" style={{ backgroundImage: 'url(https://images.pexels.com/photos/109244/pexels-photo-109244.jpeg?auto=compress&cs=tinysrgb&w=400)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }}></div>
+        <div className="position-relative">
+          <div className="icon-wrapper bg-white bg-opacity-90 rounded-circle d-inline-flex p-2 mb-2 shadow-sm transition-all">
+            <FaTruck size={20} className="transition-all" />
+          </div>
+          <h6 className="fw-bold mb-1 transition-all">Free Shipping</h6>
+          <p className="text-muted small mb-0 transition-all">₦50k+</p>
+        </div>
+      </div>
+
+      {/* Easy Returns */}
+      <div className="feature-card text-center p-3 rounded-5 position-relative overflow-hidden returns-card" style={{ minWidth: '150px', flex: '0 0 auto' }}>
+        <div className="feature-image position-absolute top-0 start-0 w-100 h-100" style={{ backgroundImage: 'url(https://images.pexels.com/photos/4467687/pexels-photo-4467687.jpeg?auto=compress&cs=tinysrgb&w=400)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }}></div>
+        <div className="position-relative">
+          <div className="icon-wrapper bg-white bg-opacity-90 rounded-circle d-inline-flex p-2 mb-2 shadow-sm transition-all">
+            <FaUndo size={20} className="transition-all" />
+          </div>
+          <h6 className="fw-bold mb-1 transition-all">Easy Returns</h6>
+          <p className="text-muted small mb-0 transition-all">30 days</p>
+        </div>
+      </div>
+
+      {/* Secure Payment */}
+      <div className="feature-card text-center p-3 rounded-5 position-relative overflow-hidden payment-card" style={{ minWidth: '150px', flex: '0 0 auto' }}>
+        <div className="feature-image position-absolute top-0 start-0 w-100 h-100" style={{ backgroundImage: 'url(https://images.pexels.com/photos/730564/pexels-photo-730564.jpeg?auto=compress&cs=tinysrgb&w=400)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }}></div>
+        <div className="position-relative">
+          <div className="icon-wrapper bg-white bg-opacity-90 rounded-circle d-inline-flex p-2 mb-2 shadow-sm transition-all">
+            <FaShieldAlt size={20} className="transition-all" />
+          </div>
+          <h6 className="fw-bold mb-1 transition-all">Secure Payment</h6>
+          <p className="text-muted small mb-0 transition-all">100% secure</p>
+        </div>
+      </div>
+
+      {/* 24/7 Support */}
+      <div className="feature-card text-center p-3 rounded-5 position-relative overflow-hidden support-card" style={{ minWidth: '150px', flex: '0 0 auto' }}>
+        <div className="feature-image position-absolute top-0 start-0 w-100 h-100" style={{ backgroundImage: 'url(https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }}></div>
+        <div className="position-relative">
+          <div className="icon-wrapper bg-white bg-opacity-90 rounded-circle d-inline-flex p-2 mb-2 shadow-sm transition-all">
+            <FaHeadset size={20} className="transition-all" />
+          </div>
+          <h6 className="fw-bold mb-1 transition-all">24/7 Support</h6>
+          <p className="text-muted small mb-0 transition-all">Always here</p>
+        </div>
+      </div>
+    </div>
+  </Container>
+</section>
 
       {/* Categories Section – Horizontal Scroll */}
       <section id="categories" className="py-5">
@@ -842,6 +882,115 @@ function LandingPage() {
         .category-card-wrapper {
           flex-shrink: 0;
         }
+          .horizontal-scroll-features {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding-bottom: 0.2rem;
+}
+.horizontal-scroll-features::-webkit-scrollbar {
+  height: 4px;
+}
+.horizontal-scroll-features::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+.horizontal-scroll-features::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+  
+.feature-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15);
+}
+
+/* Individual card hover colours */
+.shipping-card:hover {
+  background: rgba(52, 144, 220, 0.2);
+  border-color: #3490dc;
+}
+.shipping-card:hover .icon-wrapper {
+  background: #3490dc !important;
+  transform: scale(1.05);
+}
+.shipping-card:hover .icon-wrapper svg {
+  color: white !important;
+}
+.shipping-card:hover h6,
+.shipping-card:hover p {
+  color: #1e40af;
+}
+
+.returns-card:hover {
+  background: rgba(56, 161, 105, 0.2);
+  border-color: #38a169;
+}
+.returns-card:hover .icon-wrapper {
+  background: #38a169 !important;
+  transform: scale(1.05);
+}
+.returns-card:hover .icon-wrapper svg {
+  color: white !important;
+}
+.returns-card:hover h6,
+.returns-card:hover p {
+  color: #2f855a;
+}
+
+.payment-card:hover {
+  background: rgba(66, 153, 225, 0.2);
+  border-color: #4299e1;
+}
+.payment-card:hover .icon-wrapper {
+  background: #4299e1 !important;
+  transform: scale(1.05);
+}
+.payment-card:hover .icon-wrapper svg {
+  color: white !important;
+}
+.payment-card:hover h6,
+.payment-card:hover p {
+  color: #2c5282;
+}
+
+.support-card:hover {
+  background: rgba(237, 137, 54, 0.2);
+  border-color: #ed8936;
+}
+.support-card:hover .icon-wrapper {
+  background: #ed8936 !important;
+  transform: scale(1.05);
+}
+.support-card:hover .icon-wrapper svg {
+  color: white !important;
+}
+.support-card:hover h6,
+.support-card:hover p {
+  color: #c05621;
+}
+
+.transition-all {
+  transition: all 0.3s ease;
+}
+.icon-wrapper {
+  transition: all 0.3s ease;
+}
+.feature-image {
+  z-index: 0;
+}
+.feature-card > div {
+  z-index: 1;
+}
       `}</style>
     </div>
   );
