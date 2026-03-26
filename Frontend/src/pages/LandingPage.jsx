@@ -40,7 +40,7 @@ const ProductCardSkeleton = () => (
 );
 
 const CategoryCardSkeleton = () => (
-  <div className="bg-light rounded-3" style={{ height: '200px' }} />
+  <div className="bg-light rounded-3" style={{ height: '200px', width: '250px' }} />
 );
 
 function LandingPage() {
@@ -356,61 +356,59 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Categories Section (unchanged) */}
+      {/* Categories Section – Horizontal Scroll */}
       <section id="categories" className="py-5">
         <Container>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
             <div className="text-center mb-5">
               <Badge bg="primary" className="mb-3 px-3 py-2 rounded-pill">Shop by Category</Badge>
               <h2 className="display-5 fw-bold">Popular Categories</h2>
-              <p className="lead text-muted">Click any category to browse products</p>
+              <p className="lead text-muted">Scroll sideways to explore</p>
             </div>
           </motion.div>
 
-          <motion.div variants={staggerChildren} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-            <Row className="g-4">
-              {categories.map((category, index) => (
-                <Col key={category.id} lg={3} md={4} sm={6}>
-                  <motion.div variants={fadeInUp}>
-                    <motion.div
-                      whileHover={{ y: -4 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Card
-                        className={`border-0 shadow-sm category-card h-100 overflow-hidden ${filters.category === category.id.toString() ? 'border-primary border-2' : ''}`}
-                        style={{ cursor: 'pointer', borderRadius: '15px' }}
-                        onClick={() => handleCategoryClick(category.id, category.name)}
-                      >
-                        <div className="position-relative overflow-hidden" style={{ height: '200px' }}>
-                          <Card.Img
-                            variant="top"
-                            src={category.image_url}
-                            alt={category.name}
-                            className="category-img"
-                            style={{ height: '100%', width: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
-                          />
-                          <div className="position-absolute bottom-0 start-0 p-4 text-white w-100" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
-                            <div className="d-flex align-items-center justify-content-between">
-                              <h5 className="mb-0 fw-bold">{category.name}</h5>
-                              <span className="fs-4">{category.icon}</span>
-                            </div>
-                            <div className="d-flex align-items-center mt-2">
-                              <small>{getCategoryProductCount(category.id)} products</small>
-                              <FaChevronRight className="ms-2" size={12} />
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  </motion.div>
-                </Col>
-              ))}
-            </Row>
-          </motion.div>
+          <div className="horizontal-scroll-wrapper">
+            {categories.map((category, index) => (
+              <motion.div
+                key={category.id}
+                className="category-card-wrapper"
+                variants={fadeInUp}
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => handleCategoryClick(category.id, category.name)}
+                style={{ cursor: 'pointer' }}
+              >
+                <Card
+                  className={`border-0 shadow-sm category-card h-100 overflow-hidden ${filters.category === category.id.toString() ? 'border-primary border-2' : ''}`}
+                  style={{ borderRadius: '15px', width: '250px' }}
+                >
+                  <div className="position-relative overflow-hidden" style={{ height: '200px' }}>
+                    <Card.Img
+                      variant="top"
+                      src={category.image_url}
+                      alt={category.name}
+                      className="category-img"
+                      style={{ height: '100%', width: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
+                    />
+                    <div className="position-absolute bottom-0 start-0 p-4 text-white w-100" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
+                      <div className="d-flex align-items-center justify-content-between">
+                        <h5 className="mb-0 fw-bold">{category.name}</h5>
+                        <span className="fs-4">{category.icon}</span>
+                      </div>
+                      <div className="d-flex align-items-center mt-2">
+                        <small>{getCategoryProductCount(category.id)} products</small>
+                        <FaChevronRight className="ms-2" size={12} />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
         </Container>
       </section>
 
-      {/* Deals of the Day (responsive columns updated) */}
+      {/* Deals of the Day (unchanged, but responsive columns already applied) */}
       {dealsOfDay.length > 0 && (
         <section id="deals" className="py-5 bg-light">
           <Container>
@@ -423,7 +421,7 @@ function LandingPage() {
             </motion.div>
             <Row className="g-4">
               {dealsOfDay.slice(0, 4).map((product, idx) => (
-                <Col key={product.id} xs={6} md={4} lg={3} xl={3}>
+                <Col key={product.id} xs={6} md={4} lg={3}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -462,7 +460,7 @@ function LandingPage() {
         </section>
       )}
 
-      {/* Products Section */}
+      {/* Products Section – Responsive grid (2 columns on mobile) */}
       <section id="products" className="py-5">
         <Container>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
@@ -538,7 +536,7 @@ function LandingPage() {
             </Card.Body>
           </Card>
 
-          {/* Products Grid – Responsive columns */}
+          {/* Products Grid */}
           {productsLoading ? (
             <Row className="g-4">
               {[...Array(8)].map((_, i) => (
@@ -815,6 +813,34 @@ function LandingPage() {
         }
         .shadow-xl {
           box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        /* Horizontal scroll styles for categories */
+        .horizontal-scroll-wrapper {
+          display: flex;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+          gap: 1rem;
+          padding-bottom: 1rem;
+        }
+        .horizontal-scroll-wrapper::-webkit-scrollbar {
+          height: 6px;
+        }
+        .horizontal-scroll-wrapper::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .horizontal-scroll-wrapper::-webkit-scrollbar-thumb {
+          background: #888;
+          border-radius: 10px;
+        }
+        .horizontal-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+          background: #555;
+        }
+        .category-card-wrapper {
+          flex-shrink: 0;
         }
       `}</style>
     </div>
