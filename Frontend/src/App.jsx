@@ -6,11 +6,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
 import ProtectedRoute from './components/ProtectedRoute';
 
-
-
 // Layout Components
 import DashboardLayout from './components/DashboardLayout';
-
 
 // ==================== PUBLIC ROUTES ====================
 import LandingPage from './pages/LandingPage';
@@ -24,6 +21,14 @@ import SearchResults from './pages/SearchResults';
 import Categories from './pages/Categories';
 import ForgotPassword from './pages/ForgotPassword';
 import GoogleCallback from './pages/GoogleCallback';
+import FAQ from './pages/FAQ';
+import Contact from './pages/Contact';
+import AboutUs from './pages/AboutUs';
+import TermsConditions from './pages/TermsConditions';
+import TrackOrder from './pages/TrackOrder';
+import ShippingInfo from './pages/ShippingInfo';
+import ReturnsRefunds from './pages/ReturnsRefunds';
+
 
 
 
@@ -34,8 +39,8 @@ import StoreProducts from './pages/StoreProducts';
 
 // ==================== HELP & SUPPORT PAGES ====================
 import HelpCenter from './pages/HelpCenter';
-import FAQ from './pages/FAQ';
-import Contact from './pages/Contact';
+// import FAQ from './pages/FAQ';  // already imported above
+// import Contact from './pages/Contact';  // already imported above
 
 // ==================== USER ROUTES ====================
 import UserDashboard from './pages/UserDashboard';
@@ -49,7 +54,6 @@ import UserReviews from './pages/UserReviews';
 import ActivityLog from './pages/ActivityLog';
 import AccountHelp from './pages/help/AccountHelp';
 import OrdersShipping from './pages/help/OrdersShipping';
-import ReturnsRefunds from './pages/help/ReturnsRefunds';
 import PaymentsHelp from './pages/help/PaymentsHelp';
 import VendorHelp from './pages/help/VendorHelp';
 import Policies from './pages/help/Policies';
@@ -65,7 +69,6 @@ import VendorProfile from './pages/VendorProfile';
 import VendorSettings from './pages/VendorSettings';
 import VendorPayouts from './pages/VendorPayouts';
 import UserPayments from './pages/UserPayments';
-
 
 // ==================== VENDOR STORE ROUTES ====================
 import StoreSettings from './pages/StoreSettings';
@@ -83,7 +86,6 @@ import AdminSettings from './pages/AdminSettings';
 import AdminAnalytics from './pages/AdminAnalytics';
 import AdminProfile from './pages/AdminProfile';
 import AdminPendingApprovals from './pages/AdminPendingApprovals';
-
 
 // ==================== ADMIN STORE ROUTES ====================
 import AdminStores from './pages/AdminStores';
@@ -156,17 +158,30 @@ function App() {
             <Route path="/categories" element={<Categories />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/auth/google-callback" element={<GoogleCallback />} />
-
+            <Route path="/shipping" element={<ShippingInfo />} />
+            <Route path="/track" element={<TrackOrder />} />
+            <Route path="/returns" element={<ReturnsRefunds />} />
 
             {/* Public Store Routes */}
             <Route path="/stores" element={<Stores />} />
             <Route path="/stores/:id" element={<StoreDetails />} />
             <Route path="/stores/:id/products" element={<StoreProducts />} />
 
-            {/* ========== HELP & SUPPORT ROUTES - PUBLIC ========== */}
-            <Route path="/help" element={<HelpCenter />} />
-            <Route path="/help/faq" element={<FAQ />} />
-            <Route path="/help/contact" element={<Contact />} />
+            {/* ========== PUBLIC INFO PAGES ========== */}
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/terms" element={<TermsConditions />} />
+
+            {/* ========== HELP CENTER (protected) ========== */}
+            <Route path="/help" element={<PrivateRoute><HelpCenter /></PrivateRoute>} />
+            <Route path="/help/faq" element={<PrivateRoute><FAQ /></PrivateRoute>} />
+            <Route path="/help/contact" element={<PrivateRoute><Contact /></PrivateRoute>} />
+            <Route path="/help/account" element={<PrivateRoute><AccountHelp /></PrivateRoute>} />
+            <Route path="/help/orders" element={<PrivateRoute><OrdersShipping /></PrivateRoute>} />
+            <Route path="/help/payments" element={<PrivateRoute><PaymentsHelp /></PrivateRoute>} />
+            <Route path="/help/vendor" element={<PrivateRoute><VendorHelp /></PrivateRoute>} />
+            <Route path="/help/policies" element={<PrivateRoute><Policies /></PrivateRoute>} />
 
             {/* ========== SETTINGS ROUTES - PUBLIC ========== */}
             <Route path="/settings" element={<UserSettings />} />
@@ -202,26 +217,7 @@ function App() {
             <Route path="/checkout" element={
               <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><Checkout /></RoleRoute></PrivateRoute>
             } />
-            <Route path="/help/account" element={
-              <PrivateRoute><AccountHelp /></PrivateRoute>
-            } />
-            <Route path="/help/orders" element={
-              <PrivateRoute><OrdersShipping /></PrivateRoute>
-            } />
-            <Route path="/help/returns" element={
-              <PrivateRoute><ReturnsRefunds /></PrivateRoute>
-            } />
-            <Route path="/help/payments" element={
-              <PrivateRoute><PaymentsHelp /></PrivateRoute>
-            } />
-            <Route path="/help/vendor" element={
-              <PrivateRoute><VendorHelp /></PrivateRoute>
-            } />
-            <Route path="/help/policies" element={
-              <PrivateRoute><Policies /></PrivateRoute>
-            } />
             <Route path="/user/payments" element={<DashboardLayout><UserPayments /></DashboardLayout>} />
-
 
             {/* ========== VENDOR ROUTES ========== */}
             <Route path="/vendor/dashboard" element={

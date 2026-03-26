@@ -63,8 +63,14 @@ class NotificationService {
     return null;
   }
 
-  // Fetch notifications from API
+  // Fetch notifications from API – skip if no token (user not logged in)
   async fetchNotifications() {
+    // ✅ Prevent API call when user is not authenticated
+    if (!this.getAuthToken()) {
+      console.log('NotificationService: No token, skipping fetch');
+      return [];
+    }
+
     try {
       const api = this.getApi();
       const response = await api.get('/notifications');
@@ -83,6 +89,8 @@ class NotificationService {
 
   // Mark notification as read
   async markAsRead(notificationId) {
+    if (!this.getAuthToken()) return false;
+
     try {
       const api = this.getApi();
       await api.put(`/notifications/${notificationId}/read`);
@@ -102,6 +110,8 @@ class NotificationService {
 
   // Mark all as read
   async markAllAsRead() {
+    if (!this.getAuthToken()) return false;
+
     try {
       const api = this.getApi();
       await api.put('/notifications/read-all');
@@ -118,6 +128,8 @@ class NotificationService {
 
   // Add notification
   async addNotification(notification) {
+    if (!this.getAuthToken()) return null;
+
     try {
       const api = this.getApi();
       const response = await api.post('/notifications', notification);
@@ -142,6 +154,8 @@ class NotificationService {
 
   // Delete notification
   async deleteNotification(notificationId) {
+    if (!this.getAuthToken()) return false;
+
     try {
       const api = this.getApi();
       await api.delete(`/notifications/${notificationId}`);
@@ -178,14 +192,25 @@ class NotificationService {
     });
   }
 
-  // Start polling for new notifications
+  // Start polling for new notifications – only if authenticated
   startPolling(interval = 30000) {
     if (this.pollingInterval) return;
     
+    // Only start polling if user is logged in
+    if (!this.getAuthToken()) {
+      console.log('NotificationService: Not starting polling – user not logged in');
+      return;
+    }
+
     this.isPolling = true;
-    this.fetchNotifications();
-    
+    this.fetchNotifications(); // initial fetch
+
     this.pollingInterval = setInterval(() => {
+      // Check again each interval; if token disappears, stop polling
+      if (!this.getAuthToken()) {
+        this.stopPolling();
+        return;
+      }
       if (this.isPolling) {
         this.fetchNotifications();
       }

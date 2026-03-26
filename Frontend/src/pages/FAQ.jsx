@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Accordion, Form, InputGroup } from 'react-bootstrap';
 import { FaSearch, FaQuestionCircle } from 'react-icons/fa';
-import DashboardLayout from '../components/DashboardLayout';
 
 function FAQ() {
   const [search, setSearch] = useState('');
@@ -103,61 +102,59 @@ function FAQ() {
   })).filter(category => category.questions.length > 0);
 
   return (
-    <DashboardLayout>
-      <Container className="py-4">
-        <div className="text-center mb-5">
-          <h1 className="display-4 fw-bold mb-3">Frequently Asked Questions</h1>
-          <p className="lead text-muted mb-4">Find answers to common questions</p>
-          
-          <div className="mx-auto" style={{ maxWidth: '600px' }}>
-            <InputGroup size="lg">
-              <InputGroup.Text className="bg-white border-0">
-                <FaSearch className="text-primary" />
-              </InputGroup.Text>
-              <Form.Control
-                type="text"
-                placeholder="Search FAQs..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border-0 shadow-sm py-3"
-              />
-            </InputGroup>
-          </div>
+    <Container className="py-5">
+      <div className="text-center mb-5">
+        <h1 className="display-4 fw-bold mb-3">Frequently Asked Questions</h1>
+        <p className="lead text-muted mb-4">Find answers to common questions</p>
+        
+        <div className="mx-auto" style={{ maxWidth: '600px' }}>
+          <InputGroup size="lg">
+            <InputGroup.Text className="bg-white border-0">
+              <FaSearch className="text-primary" />
+            </InputGroup.Text>
+            <Form.Control
+              type="text"
+              placeholder="Search FAQs..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border-0 shadow-sm py-3"
+            />
+          </InputGroup>
         </div>
+      </div>
 
-        {filteredFaqs.map((category, idx) => (
-          <Card key={idx} className="border-0 shadow-sm mb-4">
-            <Card.Header className="bg-white border-0 pt-4">
-              <h4 className="mb-0">{category.category}</h4>
-            </Card.Header>
-            <Card.Body>
-              <Accordion defaultActiveKey="0">
-                {category.questions.map((faq, index) => (
-                  <Accordion.Item key={index} eventKey={index.toString()}>
-                    <Accordion.Header>
-                      <FaQuestionCircle className="text-primary me-2" />
-                      {faq.q}
-                    </Accordion.Header>
-                    <Accordion.Body className="text-muted">
-                      {faq.a}
-                    </Accordion.Body>
-                  </Accordion.Item>
-                ))}
-              </Accordion>
-            </Card.Body>
-          </Card>
-        ))}
+      {filteredFaqs.map((category, idx) => (
+        <Card key={idx} className="border-0 shadow-sm mb-4">
+          <Card.Header className="bg-white border-0 pt-4">
+            <h4 className="mb-0">{category.category}</h4>
+          </Card.Header>
+          <Card.Body>
+            <Accordion defaultActiveKey="0">
+              {category.questions.map((faq, index) => (
+                <Accordion.Item key={index} eventKey={index.toString()}>
+                  <Accordion.Header>
+                    <FaQuestionCircle className="text-primary me-2" />
+                    {faq.q}
+                  </Accordion.Header>
+                  <Accordion.Body className="text-muted">
+                    {faq.a}
+                  </Accordion.Body>
+                </Accordion.Item>
+              ))}
+            </Accordion>
+          </Card.Body>
+        </Card>
+      ))}
 
-        {filteredFaqs.length === 0 && (
-          <Card className="border-0 shadow-sm text-center py-5">
-            <Card.Body>
-              <h5>No FAQs found</h5>
-              <p className="text-muted">Try adjusting your search terms</p>
-            </Card.Body>
-          </Card>
-        )}
-      </Container>
-    </DashboardLayout>
+      {filteredFaqs.length === 0 && (
+        <Card className="border-0 shadow-sm text-center py-5">
+          <Card.Body>
+            <h5>No FAQs found</h5>
+            <p className="text-muted">Try adjusting your search terms</p>
+          </Card.Body>
+        </Card>
+      )}
+    </Container>
   );
 }
 

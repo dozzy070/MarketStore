@@ -1,8 +1,7 @@
-// backend/services/emailService.js
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 
-// Configure email transporter
+// Configure email transporter with IPv4 preference
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: process.env.EMAIL_PORT || 587,
@@ -11,6 +10,7 @@ const transporter = nodemailer.createTransport({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    family: 4,                     // ✅ Force IPv4 to avoid ENETUNREACH
     connectionTimeout: 10000,
     socketTimeout: 10000,
 });
