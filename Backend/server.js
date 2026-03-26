@@ -13,7 +13,7 @@ import vendorRoutes from './routes/vendor.routes.js';
 import userRoutes from './routes/user.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import adminRoutes from './routes/admin.routes.js';
-import notificationRoutes from './routes/notification.routes.js'; // Add this import
+import notificationRoutes from './routes/notification.routes.js';
 import activityRoutes from './routes/activity.routes.js';
 import auditLogRoutes from './routes/admin/auditLog.routes.js';
 import pendingRoutes from './routes/admin/pending.routes.js';
@@ -22,7 +22,6 @@ import vendorPayoutRoutes from './routes/vendor/payout.routes.js';
 import adminPayoutRoutes from './routes/admin/payout.routes.js';
 import reviewsRoutes from './routes/reviews.routes.js';
 import passport from './db/passport.js';
-
 
 import pool from './db/db.js';
 
@@ -34,7 +33,21 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// ==================== Environment Check (helps debug on Render) ====================
+const requiredEnv = [
+  'DB_USER', 'DB_PASSWORD', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'JWT_SECRET',
+  'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_CALLBACK_URL'
+];
+console.log('🔍 Checking environment variables...');
+requiredEnv.forEach(key => {
+  if (!process.env[key]) {
+    console.warn(`⚠️ Missing environment variable: ${key}`);
+  } else {
+    console.log(`✅ ${key} is set`);
+  }
+});
+
+// ==================== Middleware ====================
 app.use(cors({
   origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true,
@@ -52,7 +65,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Register routes - MAKE SURE notificationRoutes is included
+// ==================== Routes ====================
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
@@ -60,7 +73,7 @@ app.use('/api/vendor', vendorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/notifications', notificationRoutes); // Add this line
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/admin/audit-logs', auditLogRoutes);
 app.use('/api/admin', pendingRoutes);
@@ -69,8 +82,6 @@ app.use('/api/vendor/payouts', vendorPayoutRoutes);
 app.use('/api/admin', adminPayoutRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use(passport.initialize());
-
-
 
 // Test route
 app.get('/test', (req, res) => {
@@ -136,15 +147,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+// ==================== Start Server ====================
+// Explicitly bind to 0.0.0.0 (required by Render)
+app.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT} (bound to 0.0.0.0)`);
   console.log(`📡 API available at http://localhost:${PORT}/api`);
   console.log(`🔍 Health check: http://localhost:${PORT}/health`);
-  console.log(`📢 Notifications API: http://localhost:${PORT}/api/notifications`);
   console.log('=================================');
 });
-
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
