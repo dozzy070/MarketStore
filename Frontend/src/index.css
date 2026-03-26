@@ -1,0 +1,306 @@
+/* Dashboard Global Styles */
+:root {
+  --sidebar-width: 280px;
+  --sidebar-collapsed-width: 80px;
+  --topbar-height: 70px;
+  --primary-color: #0d6efd;
+  --success-color: #198754;
+  --warning-color: #ffc107;
+  --danger-color: #dc3545;
+  --info-color: #0dcaf0;
+  --dark-bg: #1a1a1a;
+  --dark-surface: #2d2d2d;
+  --dark-border: #404040;
+  --dark-text: #e0e0e0;
+  --dark-text-muted: #b0b0b0;
+}
+
+/* Gradient Backgrounds */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+}
+
+.bg-gradient-success {
+  background: linear-gradient(135deg, #198754, #157347);
+}
+
+.bg-gradient-warning {
+  background: linear-gradient(135deg, #ffc107, #ffca2c);
+}
+
+.bg-gradient-danger {
+  background: linear-gradient(135deg, #dc3545, #bb2d3b);
+}
+
+.bg-gradient-info {
+  background: linear-gradient(135deg, #0dcaf0, #31d2f2);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Dark Mode Scrollbar */
+.dark-theme ::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
+.dark-theme ::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+.dark-theme ::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Card Hover Effects */
+.card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+}
+
+/* Table Styles */
+.table th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+/* Badge Styles */
+.badge {
+  font-weight: 500;
+  padding: 0.5em 0.75em;
+}
+
+/* Button Styles */
+.btn {
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+}
+
+.btn-link {
+  text-decoration: none;
+}
+
+/* Form Controls */
+.form-control, .form-select {
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  padding: 0.5rem 1rem;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+}
+
+/* Progress Bar */
+.progress {
+  background-color: #e9ecef;
+  border-radius: 10px;
+}
+
+.progress-bar {
+  border-radius: 10px;
+}
+
+/* Loading Spinner */
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Responsive Tables */
+@media (max-width: 768px) {
+  .table-responsive {
+    border: 0;
+  }
+  
+  .table thead {
+    display: none;
+  }
+  
+  .table tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+  }
+  
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .table td:last-child {
+    border-bottom: none;
+  }
+  
+  .table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6c757d;
+    margin-right: 1rem;
+  }
+}
+
+/* Dark Mode Overrides */
+.dark-theme {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+}
+
+.dark-theme .card {
+  background-color: var(--dark-surface);
+  border-color: var(--dark-border);
+}
+
+.dark-theme .text-muted {
+  color: var(--dark-text-muted) !important;
+}
+
+.dark-theme .table {
+  color: var(--dark-text);
+}
+
+.dark-theme .table thead th {
+  background-color: var(--dark-surface);
+  color: var(--dark-text-muted);
+  border-color: var(--dark-border);
+}
+
+.dark-theme .table td {
+  border-color: var(--dark-border);
+}
+
+.dark-theme .table-hover tbody tr:hover {
+  background-color: rgba(255,255,255,0.05);
+}
+
+.dark-theme .bg-light {
+  background-color: var(--dark-surface) !important;
+}
+
+.dark-theme .form-control,
+.dark-theme .form-select {
+  background-color: var(--dark-surface);
+  border-color: var(--dark-border);
+  color: var(--dark-text);
+}
+
+.dark-theme .form-control:focus,
+.dark-theme .form-select:focus {
+  background-color: var(--dark-surface);
+  color: var(--dark-text);
+}
+
+.dark-theme .input-group-text {
+  background-color: var(--dark-surface);
+  border-color: var(--dark-border);
+  color: var(--dark-text-muted);
+}
+
+.dark-theme .progress {
+  background-color: var(--dark-border);
+}
+
+.dark-theme .badge.bg-light {
+  background-color: var(--dark-border) !important;
+  color: var(--dark-text) !important;
+}
+
+.dark-theme .border-bottom {
+  border-color: var(--dark-border) !important;
+}
+
+.dark-theme .border-top {
+  border-color: var(--dark-border) !important;
+}
+
+/* Print Styles */
+@media print {
+  .sidebar,
+  .topbar,
+  .no-print {
+    display: none !important;
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+  }
+}
+  /* Suppress Paystack CSS loading error in console */
+  link[href*="paystack.com/public/css/button.min.css"] {
+    display: none;
+  }
