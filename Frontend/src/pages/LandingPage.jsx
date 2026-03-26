@@ -237,7 +237,7 @@ function LandingPage() {
 
   return (
     <div className="landing-page">
-      {/* Navigation Bar */}
+      {/* Navigation Bar (unchanged) */}
       <Navbar bg="white" expand="lg" className="py-3 shadow-sm sticky-top">
         <Container>
           <Navbar.Brand href="/" className="fw-bold fs-3 d-flex align-items-center">
@@ -297,7 +297,7 @@ function LandingPage() {
         </Container>
       </Navbar>
 
-      {/* Hero Section with Animated Elements */}
+      {/* Hero Section (unchanged) */}
       <section className="py-5 position-relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', minHeight: '600px', display: 'flex', alignItems: 'center' }}>
         <Container>
           <motion.div initial="hidden" animate="visible" variants={fadeInUp}>
@@ -341,7 +341,7 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Features Section */}
+      {/* Features Section (unchanged) */}
       <section className="py-5 bg-light">
         <Container>
           <Row className="g-4">
@@ -356,7 +356,7 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Categories Section */}
+      {/* Categories Section (unchanged) */}
       <section id="categories" className="py-5">
         <Container>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
@@ -410,7 +410,7 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Deals of the Day */}
+      {/* Deals of the Day (responsive columns updated) */}
       {dealsOfDay.length > 0 && (
         <section id="deals" className="py-5 bg-light">
           <Container>
@@ -423,7 +423,7 @@ function LandingPage() {
             </motion.div>
             <Row className="g-4">
               {dealsOfDay.slice(0, 4).map((product, idx) => (
-                <Col key={product.id} lg={3} md={6}>
+                <Col key={product.id} xs={6} md={4} lg={3} xl={3}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -482,7 +482,7 @@ function LandingPage() {
             </div>
           </motion.div>
 
-          {/* Filters */}
+          {/* Filters (unchanged) */}
           <Card className="border-0 shadow-sm mb-4" style={{ borderRadius: '15px' }}>
             <Card.Body className="p-4">
               <Row className="align-items-center g-3">
@@ -538,11 +538,11 @@ function LandingPage() {
             </Card.Body>
           </Card>
 
-          {/* Products Grid */}
+          {/* Products Grid – Responsive columns */}
           {productsLoading ? (
             <Row className="g-4">
               {[...Array(8)].map((_, i) => (
-                <Col key={i} xl={3} lg={4} md={6}>
+                <Col key={i} xs={6} md={4} lg={3}>
                   <ProductCardSkeleton />
                 </Col>
               ))}
@@ -573,7 +573,7 @@ function LandingPage() {
             <>
               <Row className="g-4">
                 {currentProducts.map((product, idx) => (
-                  <Col key={product.id} xl={3} lg={4} md={6}>
+                  <Col key={product.id} xs={6} md={4} lg={3}>
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
@@ -637,7 +637,7 @@ function LandingPage() {
                 ))}
               </Row>
 
-              {/* Pagination */}
+              {/* Pagination (unchanged) */}
               {totalPages > 1 && (
                 <div className="d-flex justify-content-center mt-4">
                   <Button variant="outline-primary" className="mx-1" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
@@ -670,7 +670,7 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Testimonials */}
+      {/* Testimonials (unchanged) */}
       <section id="testimonials" className="py-5 bg-light">
         <Container>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
@@ -712,7 +712,7 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Newsletter */}
+      {/* Newsletter (unchanged) */}
       <section className="py-5" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
         <Container>
           <Row className="justify-content-center">
@@ -742,7 +742,7 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Footer */}
+      {/* Footer (unchanged) */}
       <footer className="bg-dark text-white pt-5 pb-3">
         <Container>
           <Row className="g-4 mb-4">
