@@ -1,4 +1,4 @@
-// frontend/src/pages/UserReviews.jsx - Completely Fixed with Real API Integration
+// frontend/src/pages/UserReviews.jsx - Real-time API Integration (No Mock Data)
 
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form, Modal, Badge, Alert } from 'react-bootstrap';
@@ -166,8 +166,8 @@ function UserReviews() {
       
       console.log('Orders found:', ordersData.length);
       
-      // If no orders, try user orders endpoint
-      if (ordersData.length === 0) {
+      // If no orders, try user orders endpoint (if available)
+      if (ordersData.length === 0 && orderAPI.getUserOrders) {
         const userOrdersResponse = await orderAPI.getUserOrders?.();
         if (userOrdersResponse?.data) {
           ordersData = Array.isArray(userOrdersResponse.data) ? userOrdersResponse.data : 
@@ -175,7 +175,7 @@ function UserReviews() {
         }
       }
       
-      // Extract unique products from orders that are delivered
+      // Extract unique products from orders that are delivered/completed
       const purchasedProductMap = new Map();
       
       ordersData.forEach(order => {
@@ -206,15 +206,8 @@ function UserReviews() {
       
     } catch (error) {
       console.error('Failed to load purchased products:', error);
-      // For demo purposes, add some mock products if API fails
-      if (process.env.NODE_ENV === 'development') {
-        setPurchasedProducts([
-          { id: 999, name: 'Sample Product 1', image: 'https://via.placeholder.com/80' },
-          { id: 998, name: 'Sample Product 2', image: 'https://via.placeholder.com/80' }
-        ]);
-      } else {
-        setPurchasedProducts([]);
-      }
+      toast.error('Unable to load products available for review');
+      setPurchasedProducts([]);
     } finally {
       setLoadingProducts(false);
     }

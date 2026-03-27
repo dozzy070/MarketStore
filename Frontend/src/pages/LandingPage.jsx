@@ -1,6 +1,6 @@
 // frontend/src/pages/LandingPage.jsx
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Navbar, Nav, Dropdown, Form, Alert, InputGroup, Spinner, Placeholder } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Button, Badge, Navbar, Nav, Dropdown, Form, Alert, InputGroup, Modal, Image, ListGroup } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FaStore, FaShoppingCart, FaStar, FaHeart, FaFilter, FaSearch, FaUser,
@@ -8,7 +8,8 @@ import {
   FaBars, FaTimes, FaPhone, FaEnvelope, FaMapMarkerAlt, FaFacebook,
   FaTwitter, FaInstagram, FaTruck, FaShieldAlt, FaUndo, FaHeadset,
   FaExclamationTriangle, FaSync, FaChevronRight, FaChevronLeft,
-  FaFire, FaClock, FaRocket, FaPaperPlane, FaGift, FaTag
+  FaFire, FaClock, FaRocket, FaPaperPlane, FaGift, FaTag, FaHandsHelping,
+  FaBookOpen, FaStoreAlt, FaUserShield, FaAngleRight, FaQuoteLeft
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -19,7 +20,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 // Categories from your database
 const CATEGORIES = [
-  { id: 1, name: 'Electronics', image_url: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400', icon: '💻' },
+  { id: 1, name: 'Electronics', image_url: 'https://images.unsplash.com/photo-1498049794561-7780e1231661?w=400', icon: '💻' },
   { id: 2, name: 'Fashion', image_url: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=400', icon: '👕' },
   { id: 3, name: 'Home & Living', image_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=400', icon: '🏠' },
   { id: 4, name: 'Sports', image_url: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400', icon: '⚽' },
@@ -30,17 +31,187 @@ const CATEGORIES = [
 // Skeleton Loader Components
 const ProductCardSkeleton = () => (
   <Card className="border-0 shadow-sm h-100" style={{ borderRadius: '15px', overflow: 'hidden' }}>
-    <Placeholder as="div" animation="glow" style={{ height: '200px', width: '100%' }} />
+    <div className="bg-light" style={{ height: '200px' }} />
     <Card.Body>
-      <Placeholder as={Card.Title} animation="glow"><Placeholder xs={6} /></Placeholder>
-      <Placeholder as={Card.Text} animation="glow"><Placeholder xs={4} /> <Placeholder xs={3} /></Placeholder>
-      <Placeholder.Button variant="primary" xs={12} />
+      <div className="bg-light rounded" style={{ height: '20px', width: '80%', marginBottom: '10px' }} />
+      <div className="bg-light rounded" style={{ height: '16px', width: '60%', marginBottom: '10px' }} />
+      <div className="bg-light rounded" style={{ height: '36px', width: '100%' }} />
     </Card.Body>
   </Card>
 );
 
-const CategoryCardSkeleton = () => (
-  <div className="bg-light rounded-3" style={{ height: '200px', width: '250px' }} />
+// Modal Components (defined inside to keep everything in one file)
+const CharityModal = ({ show, onHide }) => (
+  <Modal show={show} onHide={onHide} size="lg" centered>
+    <Modal.Header closeButton className="border-0 pb-0">
+      <Modal.Title className="fw-bold">
+        <FaHandsHelping className="text-primary me-2" /> MarketStore Cares
+      </Modal.Title>
+    </Modal.Header>
+    <Modal.Body className="pt-0">
+      <Image 
+        src="https://images.unsplash.com/photo-1593113630400-ea4288922497?w=800" 
+        alt="Community support" 
+        fluid 
+        rounded 
+        className="mb-4"
+        style={{ maxHeight: '300px', objectFit: 'cover', width: '100%' }}
+      />
+      <p className="lead">Empowering African communities through commerce and giving back.</p>
+      <p>At MarketStore, we believe that every purchase can make a difference. We partner with local charities across Nigeria and Africa to support education, healthcare, and economic empowerment. With every sale, we donate a percentage to initiatives that matter.</p>
+      <h6 className="mt-3">Our Current Initiatives:</h6>
+      <ul>
+        <li><strong>School Supply Drive</strong> – Providing books and materials to underprivileged children in Lagos.</li>
+        <li><strong>Women in Tech</strong> – Sponsoring coding bootcamps for young women in rural communities.</li>
+        <li><strong>Farm to Market</strong> – Helping small‑scale farmers sell their produce through our platform.</li>
+      </ul>
+      <p className="text-muted mt-3">Together, we’ve already supported over 5,000 families. Join us in making a lasting impact.</p>
+      <Button variant="outline-primary" href="/charity" className="mt-2">Learn More</Button>
+    </Modal.Body>
+  </Modal>
+);
+
+const BlogModal = ({ show, onHide }) => {
+  const blogPosts = [
+    {
+      id: 1,
+      title: "How Local Artisans Are Redefining African Fashion",
+      excerpt: "Meet the designers behind the vibrant Ankara prints you love, and learn how they're blending tradition with modern style.",
+      image: "https://images.unsplash.com/photo-1589167731396-9da2d4c649fe?w=600",
+      date: "March 15, 2026",
+      author: "Amara Okafor"
+    },
+    {
+      id: 2,
+      title: "The Rise of E‑commerce in Nigeria: Opportunities and Challenges",
+      excerpt: "Exploring the booming online marketplace and what it means for vendors and consumers alike.",
+      image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600",
+      date: "March 10, 2026",
+      author: "Chidi Nwosu"
+    },
+    {
+      id: 3,
+      title: "5 Tips for Sustainable Shopping in Africa",
+      excerpt: "How to make eco‑conscious choices without compromising on style or quality.",
+      image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600",
+      date: "March 5, 2026",
+      author: "Fatima Bello"
+    }
+  ];
+
+  return (
+    <Modal show={show} onHide={onHide} size="lg" centered>
+      <Modal.Header closeButton className="border-0 pb-0">
+        <Modal.Title className="fw-bold">
+          <FaBookOpen className="text-primary me-2" /> MarketStore Blog
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <Row className="g-4">
+          {blogPosts.map(post => (
+            <Col md={4} key={post.id}>
+              <Card className="border-0 shadow-sm h-100">
+                <Card.Img variant="top" src={post.image} style={{ height: '180px', objectFit: 'cover' }} />
+                <Card.Body>
+                  <Card.Title className="h6">{post.title}</Card.Title>
+                  <Card.Text className="small text-muted">{post.excerpt}</Card.Text>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <small className="text-muted">{post.date}</small>
+                    <Button variant="link" size="sm" className="p-0">Read more →</Button>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+        <div className="text-center mt-4">
+          <Button variant="outline-primary" href="/blog">View All Articles</Button>
+        </div>
+      </Modal.Body>
+    </Modal>
+  );
+};
+
+const BecomeVendorModal = ({ show, onHide }) => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handleStart = () => {
+    if (isAuthenticated) {
+      navigate('/vendor/apply');
+    } else {
+      navigate('/login');
+      toast('Please log in to apply as a vendor');
+    }
+  };
+
+  return (
+    <Modal show={show} onHide={onHide} size="lg" centered>
+      <Modal.Header closeButton className="border-0 pb-0">
+        <Modal.Title className="fw-bold">
+          <FaStoreAlt className="text-primary me-2" /> Sell on MarketStore
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <Row className="align-items-center">
+          <Col md={6}>
+            <Image 
+              src="https://images.unsplash.com/photo-1556742031-c6961e8561b0?w=600" 
+              alt="Vendor" 
+              fluid 
+              rounded 
+              className="mb-3"
+            />
+          </Col>
+          <Col md={6}>
+            <p className="lead">Reach thousands of customers across Nigeria and Africa.</p>
+            <ul className="list-unstyled">
+              <li><FaCheckCircle className="text-success me-2" /> Easy product upload</li>
+              <li><FaCheckCircle className="text-success me-2" /> Secure payments</li>
+              <li><FaCheckCircle className="text-success me-2" /> Marketing support</li>
+              <li><FaCheckCircle className="text-success me-2" /> Weekly payouts</li>
+            </ul>
+            <Button variant="primary" onClick={handleStart} className="mt-3 w-100">Become a Vendor</Button>
+            <p className="text-muted small mt-3">No monthly fees – only 5% commission on sales.</p>
+          </Col>
+        </Row>
+      </Modal.Body>
+    </Modal>
+  );
+};
+
+const BuyerSafetyModal = ({ show, onHide }) => (
+  <Modal show={show} onHide={onHide} size="lg" centered>
+    <Modal.Header closeButton className="border-0 pb-0">
+      <Modal.Title className="fw-bold">
+        <FaUserShield className="text-primary me-2" /> Buyer Safety
+      </Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+      <Row>
+        <Col md={7}>
+          <h5>Your security is our priority</h5>
+          <p>We use industry‑standard encryption and fraud detection to ensure every transaction is safe.</p>
+          <h6>What we do:</h6>
+          <ul>
+            <li><strong>Secure Payments:</strong> All payments are processed via trusted gateways.</li>
+            <li><strong>Vendor Verification:</strong> We verify every vendor’s business details.</li>
+            <li><strong>Buyer Protection:</strong> Get your money back if an item doesn’t match the description.</li>
+            <li><strong>24/7 Monitoring:</strong> Our team watches for suspicious activity.</li>
+          </ul>
+          <Button variant="outline-primary" href="/safety" className="mt-2">Full Safety Guide</Button>
+        </Col>
+        <Col md={5}>
+          <Image 
+            src="https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500" 
+            alt="Safety" 
+            fluid 
+            rounded 
+          />
+        </Col>
+      </Row>
+    </Modal.Body>
+  </Modal>
 );
 
 function LandingPage() {
@@ -60,7 +231,6 @@ function LandingPage() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [wishlist, setWishlist] = useState([]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
@@ -68,6 +238,13 @@ function LandingPage() {
   const [apiError, setApiError] = useState(false);
   const [selectedCategoryName, setSelectedCategoryName] = useState('All Products');
   const [searchDebounce, setSearchDebounce] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState({
+    charity: false,
+    blog: false,
+    vendor: false,
+    safety: false
+  });
   const productsPerPage = 8;
 
   // Load initial data
@@ -237,7 +414,72 @@ function LandingPage() {
 
   return (
     <div className="landing-page">
-      {/* Navigation Bar (unchanged) */}
+      {/* Sidebar Toggle Button */}
+      <Button
+        variant="light"
+        className="position-fixed start-0 top-50 translate-middle-y rounded-end-0 shadow-sm"
+        style={{ zIndex: 1000, left: 0, transform: 'translateY(-50%)', borderRadius: '0 8px 8px 0' }}
+        onClick={() => setSidebarOpen(true)}
+      >
+        <FaAngleRight size={20} />
+      </Button>
+
+      {/* Sidebar */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
+              style={{ zIndex: 1040 }}
+              onClick={() => setSidebarOpen(false)}
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'tween', duration: 0.3 }}
+              className="position-fixed top-0 start-0 h-100 bg-white shadow-lg"
+              style={{ width: '280px', zIndex: 1050, overflowY: 'auto' }}
+            >
+              <div className="d-flex justify-content-between align-items-center p-3 border-bottom">
+                <h5 className="mb-0">Discover</h5>
+                <Button variant="link" className="p-0" onClick={() => setSidebarOpen(false)}>
+                  <FaTimes size={20} />
+                </Button>
+              </div>
+              <ListGroup variant="flush">
+                <ListGroup.Item action onClick={() => { setModalOpen({ ...modalOpen, charity: true }); setSidebarOpen(false); }}>
+                  <FaHandsHelping className="text-primary me-3" /> Charity
+                </ListGroup.Item>
+                <ListGroup.Item action onClick={() => { setModalOpen({ ...modalOpen, blog: true }); setSidebarOpen(false); }}>
+                  <FaBookOpen className="text-primary me-3" /> Blog
+                </ListGroup.Item>
+                <ListGroup.Item action onClick={() => { setModalOpen({ ...modalOpen, vendor: true }); setSidebarOpen(false); }}>
+                  <FaStoreAlt className="text-primary me-3" /> Become a Vendor
+                </ListGroup.Item>
+                <ListGroup.Item action onClick={() => { setModalOpen({ ...modalOpen, safety: true }); setSidebarOpen(false); }}>
+                  <FaUserShield className="text-primary me-3" /> Buyer Safety
+                </ListGroup.Item>
+              </ListGroup>
+              <div className="p-3 mt-4 border-top">
+                <small className="text-muted">Connecting you with purpose</small>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Modals */}
+      <CharityModal show={modalOpen.charity} onHide={() => setModalOpen({ ...modalOpen, charity: false })} />
+      <BlogModal show={modalOpen.blog} onHide={() => setModalOpen({ ...modalOpen, blog: false })} />
+      <BecomeVendorModal show={modalOpen.vendor} onHide={() => setModalOpen({ ...modalOpen, vendor: false })} />
+      <BuyerSafetyModal show={modalOpen.safety} onHide={() => setModalOpen({ ...modalOpen, safety: false })} />
+
+      {/* Responsive Navigation Bar */}
       <Navbar bg="white" expand="lg" className="py-3 shadow-sm sticky-top">
         <Container>
           <Navbar.Brand href="/" className="fw-bold fs-3 d-flex align-items-center">
@@ -245,6 +487,7 @@ function LandingPage() {
             <span className="text-dark">Market<span className="text-primary">Store</span></span>
           </Navbar.Brand>
 
+          {/* Action buttons (always visible) */}
           <div className="d-flex align-items-center gap-3 order-lg-2">
             <Button variant="link" className="position-relative text-dark p-0 d-none d-md-block" onClick={() => navigate('/wishlist')}>
               <FaHeart size={20} />
@@ -254,17 +497,15 @@ function LandingPage() {
               <FaShoppingCart className="me-2" /><span>Cart</span>
               {getCartCount() > 0 && <Badge bg="danger" className="position-absolute top-0 start-100 translate-middle rounded-pill">{getCartCount()}</Badge>}
             </Button>
-            <Button variant="link" className="d-lg-none p-0 text-dark" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              {mobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
-            </Button>
+            <Navbar.Toggle aria-controls="basic-navbar-nav" className="border-0 p-0" />
           </div>
 
-          <Navbar.Collapse className={mobileMenuOpen ? 'show' : ''}>
+          <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="mx-auto align-items-center">
-              <Nav.Link href="#categories">Categories</Nav.Link>
-              <Nav.Link href="#products">Products</Nav.Link>
-              <Nav.Link href="#deals">Deals</Nav.Link>
-              <Nav.Link href="#testimonials">Testimonials</Nav.Link>
+              <Nav.Link href="#categories" onClick={() => { /* optional close */ }}>Categories</Nav.Link>
+              <Nav.Link href="#products" onClick={() => { /* optional close */ }}>Products</Nav.Link>
+              <Nav.Link href="#deals" onClick={() => { /* optional close */ }}>Deals</Nav.Link>
+              <Nav.Link href="#testimonials" onClick={() => { /* optional close */ }}>Testimonials</Nav.Link>
             </Nav>
 
             <div className="d-flex align-items-center">
@@ -341,114 +582,94 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Features Section with Horizontal Scroll on Mobile */}
-<section className="py-5 position-relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #eef2f6 100%)' }}>
-  <Container fluid className="px-3">
-    <div className="horizontal-scroll-features d-flex gap-3 justify-content-start justify-content-lg-center">
-      {/* Free Shipping */}
-      <div className="feature-card text-center p-3 rounded-5 position-relative overflow-hidden shipping-card" style={{ minWidth: '150px', flex: '0 0 auto' }}>
-        <div className="feature-image position-absolute top-0 start-0 w-100 h-100" style={{ backgroundImage: 'url(https://images.pexels.com/photos/109244/pexels-photo-109244.jpeg?auto=compress&cs=tinysrgb&w=400)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }}></div>
-        <div className="position-relative">
-          <div className="icon-wrapper bg-white bg-opacity-90 rounded-circle d-inline-flex p-2 mb-2 shadow-sm transition-all">
-            <FaTruck size={20} className="transition-all" />
+      {/* Features Section - News Ticker */}
+      <section className="py-3 bg-light border-top border-bottom">
+        <Container fluid className="px-0">
+          <div className="ticker-container">
+            <div className="ticker-content">
+              <div className="ticker-item">
+                <FaTruck className="ticker-icon" />
+                <span>Free Shipping on orders over ₦50,000</span>
+              </div>
+              <div className="ticker-item">
+                <FaUndo className="ticker-icon" />
+                <span>Easy Returns – 30‑day return policy</span>
+              </div>
+              <div className="ticker-item">
+                <FaShieldAlt className="ticker-icon" />
+                <span>Secure Payment – 100% protected</span>
+              </div>
+              <div className="ticker-item">
+                <FaHeadset className="ticker-icon" />
+                <span>24/7 Support – We're here to help</span>
+              </div>
+              {/* Duplicate items for seamless loop */}
+              <div className="ticker-item">
+                <FaTruck className="ticker-icon" />
+                <span>Free Shipping on orders over ₦50,000</span>
+              </div>
+              <div className="ticker-item">
+                <FaUndo className="ticker-icon" />
+                <span>Easy Returns – 30‑day return policy</span>
+              </div>
+              <div className="ticker-item">
+                <FaShieldAlt className="ticker-icon" />
+                <span>Secure Payment – 100% protected</span>
+              </div>
+              <div className="ticker-item">
+                <FaHeadset className="ticker-icon" />
+                <span>24/7 Support – We're here to help</span>
+              </div>
+            </div>
           </div>
-          <h6 className="fw-bold mb-1 transition-all">Free Shipping</h6>
-          <p className="text-muted small mb-0 transition-all">₦50k+</p>
-        </div>
-      </div>
+        </Container>
+      </section>
 
-      {/* Easy Returns */}
-      <div className="feature-card text-center p-3 rounded-5 position-relative overflow-hidden returns-card" style={{ minWidth: '150px', flex: '0 0 auto' }}>
-        <div className="feature-image position-absolute top-0 start-0 w-100 h-100" style={{ backgroundImage: 'url(https://images.pexels.com/photos/4467687/pexels-photo-4467687.jpeg?auto=compress&cs=tinysrgb&w=400)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }}></div>
-        <div className="position-relative">
-          <div className="icon-wrapper bg-white bg-opacity-90 rounded-circle d-inline-flex p-2 mb-2 shadow-sm transition-all">
-            <FaUndo size={20} className="transition-all" />
-          </div>
-          <h6 className="fw-bold mb-1 transition-all">Easy Returns</h6>
-          <p className="text-muted small mb-0 transition-all">30 days</p>
-        </div>
-      </div>
-
-      {/* Secure Payment */}
-      <div className="feature-card text-center p-3 rounded-5 position-relative overflow-hidden payment-card" style={{ minWidth: '150px', flex: '0 0 auto' }}>
-        <div className="feature-image position-absolute top-0 start-0 w-100 h-100" style={{ backgroundImage: 'url(https://images.pexels.com/photos/730564/pexels-photo-730564.jpeg?auto=compress&cs=tinysrgb&w=400)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }}></div>
-        <div className="position-relative">
-          <div className="icon-wrapper bg-white bg-opacity-90 rounded-circle d-inline-flex p-2 mb-2 shadow-sm transition-all">
-            <FaShieldAlt size={20} className="transition-all" />
-          </div>
-          <h6 className="fw-bold mb-1 transition-all">Secure Payment</h6>
-          <p className="text-muted small mb-0 transition-all">100% secure</p>
-        </div>
-      </div>
-
-      {/* 24/7 Support */}
-      <div className="feature-card text-center p-3 rounded-5 position-relative overflow-hidden support-card" style={{ minWidth: '150px', flex: '0 0 auto' }}>
-        <div className="feature-image position-absolute top-0 start-0 w-100 h-100" style={{ backgroundImage: 'url(https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }}></div>
-        <div className="position-relative">
-          <div className="icon-wrapper bg-white bg-opacity-90 rounded-circle d-inline-flex p-2 mb-2 shadow-sm transition-all">
-            <FaHeadset size={20} className="transition-all" />
-          </div>
-          <h6 className="fw-bold mb-1 transition-all">24/7 Support</h6>
-          <p className="text-muted small mb-0 transition-all">Always here</p>
-        </div>
-      </div>
-    </div>
-  </Container>
-</section>
-
-      {/* Categories Section – Horizontal Scroll */}
+      {/* Categories Section - Horizontal Scroll */}
       <section id="categories" className="py-5">
         <Container>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
             <div className="text-center mb-5">
               <Badge bg="primary" className="mb-3 px-3 py-2 rounded-pill">Shop by Category</Badge>
               <h2 className="display-5 fw-bold">Popular Categories</h2>
-              <p className="lead text-muted">Scroll sideways to explore</p>
+              <p className="lead text-muted">Click any category to browse products</p>
             </div>
           </motion.div>
 
-          <div className="horizontal-scroll-wrapper">
-            {categories.map((category, index) => (
+          <div className="categories-horizontal">
+            {categories.map((category) => (
               <motion.div
                 key={category.id}
-                className="category-card-wrapper"
-                variants={fadeInUp}
+                className="category-card-horizontal"
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => handleCategoryClick(category.id, category.name)}
                 style={{ cursor: 'pointer' }}
               >
-                <Card
-                  className={`border-0 shadow-sm category-card h-100 overflow-hidden ${filters.category === category.id.toString() ? 'border-primary border-2' : ''}`}
-                  style={{ borderRadius: '15px', width: '250px' }}
-                >
-                  <div className="position-relative overflow-hidden" style={{ height: '200px' }}>
-                    <Card.Img
-                      variant="top"
-                      src={category.image_url}
-                      alt={category.name}
-                      className="category-img"
-                      style={{ height: '100%', width: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
-                    />
-                    <div className="position-absolute bottom-0 start-0 p-4 text-white w-100" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
-                      <div className="d-flex align-items-center justify-content-between">
-                        <h5 className="mb-0 fw-bold">{category.name}</h5>
-                        <span className="fs-4">{category.icon}</span>
-                      </div>
-                      <div className="d-flex align-items-center mt-2">
-                        <small>{getCategoryProductCount(category.id)} products</small>
-                        <FaChevronRight className="ms-2" size={12} />
-                      </div>
+                <div className="position-relative overflow-hidden rounded-4 shadow-sm h-100">
+                  <img
+                    src={category.image_url}
+                    alt={category.name}
+                    className="category-img-horizontal"
+                  />
+                  <div className="category-overlay">
+                    <div className="d-flex align-items-center justify-content-between">
+                      <h5 className="mb-0 fw-bold">{category.name}</h5>
+                      <span className="fs-4">{category.icon}</span>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <small>{getCategoryProductCount(category.id)} products</small>
+                      <FaChevronRight className="ms-2" size={12} />
                     </div>
                   </div>
-                </Card>
+                </div>
               </motion.div>
             ))}
           </div>
         </Container>
       </section>
 
-      {/* Deals of the Day (unchanged, but responsive columns already applied) */}
+      {/* Deals of the Day (unchanged) */}
       {dealsOfDay.length > 0 && (
         <section id="deals" className="py-5 bg-light">
           <Container>
@@ -500,7 +721,7 @@ function LandingPage() {
         </section>
       )}
 
-      {/* Products Section – Responsive grid (2 columns on mobile) */}
+      {/* Products Section (unchanged) */}
       <section id="products" className="py-5">
         <Container>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
@@ -520,7 +741,7 @@ function LandingPage() {
             </div>
           </motion.div>
 
-          {/* Filters (unchanged) */}
+          {/* Filters */}
           <Card className="border-0 shadow-sm mb-4" style={{ borderRadius: '15px' }}>
             <Card.Body className="p-4">
               <Row className="align-items-center g-3">
@@ -675,7 +896,7 @@ function LandingPage() {
                 ))}
               </Row>
 
-              {/* Pagination (unchanged) */}
+              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="d-flex justify-content-center mt-4">
                   <Button variant="outline-primary" className="mx-1" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
@@ -708,7 +929,7 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Testimonials (unchanged) */}
+      {/* Testimonials */}
       <section id="testimonials" className="py-5 bg-light">
         <Container>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
@@ -750,7 +971,7 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Newsletter (unchanged) */}
+      {/* Newsletter */}
       <section className="py-5" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
         <Container>
           <Row className="justify-content-center">
@@ -780,7 +1001,7 @@ function LandingPage() {
         </Container>
       </section>
 
-      {/* Footer (unchanged) */}
+      {/* Footer */}
       <footer className="bg-dark text-white pt-5 pb-3">
         <Container>
           <Row className="g-4 mb-4">
@@ -854,143 +1075,106 @@ function LandingPage() {
         .shadow-xl {
           box-shadow: 0 20px 40px rgba(0,0,0,0.2);
         }
-        /* Horizontal scroll styles for categories */
-        .horizontal-scroll-wrapper {
+
+        /* Horizontal categories */
+        .categories-horizontal {
           display: flex;
           overflow-x: auto;
-          overflow-y: hidden;
-          scroll-behavior: smooth;
-          -webkit-overflow-scrolling: touch;
           scrollbar-width: thin;
-          gap: 1rem;
-          padding-bottom: 1rem;
+          gap: 1.5rem;
+          padding-bottom: 0.5rem;
+          scroll-snap-type: x mandatory;
         }
-        .horizontal-scroll-wrapper::-webkit-scrollbar {
+        .categories-horizontal::-webkit-scrollbar {
           height: 6px;
         }
-        .horizontal-scroll-wrapper::-webkit-scrollbar-track {
+        .categories-horizontal::-webkit-scrollbar-track {
           background: #f1f1f1;
           border-radius: 10px;
         }
-        .horizontal-scroll-wrapper::-webkit-scrollbar-thumb {
+        .categories-horizontal::-webkit-scrollbar-thumb {
           background: #888;
           border-radius: 10px;
         }
-        .horizontal-scroll-wrapper::-webkit-scrollbar-thumb:hover {
-          background: #555;
+        .category-card-horizontal {
+          flex: 0 0 auto;
+          width: 260px;
+          scroll-snap-align: start;
+          transition: transform 0.2s;
         }
-        .category-card-wrapper {
-          flex-shrink: 0;
+        .category-img-horizontal {
+          width: 100%;
+          height: 200px;
+          object-fit: cover;
+          transition: transform 0.5s;
         }
-          .horizontal-scroll-features {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  padding-bottom: 0.2rem;
-}
-.horizontal-scroll-features::-webkit-scrollbar {
-  height: 4px;
-}
-.horizontal-scroll-features::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-.horizontal-scroll-features::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-}
-  
-.feature-card {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-}
-.feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15);
-}
+        .category-card-horizontal:hover .category-img-horizontal {
+          transform: scale(1.05);
+        }
+        .category-overlay {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 1rem;
+          background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+          color: white;
+          border-radius: 0 0 1rem 1rem;
+        }
 
-/* Individual card hover colours */
-.shipping-card:hover {
-  background: rgba(52, 144, 220, 0.2);
-  border-color: #3490dc;
-}
-.shipping-card:hover .icon-wrapper {
-  background: #3490dc !important;
-  transform: scale(1.05);
-}
-.shipping-card:hover .icon-wrapper svg {
-  color: white !important;
-}
-.shipping-card:hover h6,
-.shipping-card:hover p {
-  color: #1e40af;
-}
-
-.returns-card:hover {
-  background: rgba(56, 161, 105, 0.2);
-  border-color: #38a169;
-}
-.returns-card:hover .icon-wrapper {
-  background: #38a169 !important;
-  transform: scale(1.05);
-}
-.returns-card:hover .icon-wrapper svg {
-  color: white !important;
-}
-.returns-card:hover h6,
-.returns-card:hover p {
-  color: #2f855a;
-}
-
-.payment-card:hover {
-  background: rgba(66, 153, 225, 0.2);
-  border-color: #4299e1;
-}
-.payment-card:hover .icon-wrapper {
-  background: #4299e1 !important;
-  transform: scale(1.05);
-}
-.payment-card:hover .icon-wrapper svg {
-  color: white !important;
-}
-.payment-card:hover h6,
-.payment-card:hover p {
-  color: #2c5282;
-}
-
-.support-card:hover {
-  background: rgba(237, 137, 54, 0.2);
-  border-color: #ed8936;
-}
-.support-card:hover .icon-wrapper {
-  background: #ed8936 !important;
-  transform: scale(1.05);
-}
-.support-card:hover .icon-wrapper svg {
-  color: white !important;
-}
-.support-card:hover h6,
-.support-card:hover p {
-  color: #c05621;
-}
-
-.transition-all {
-  transition: all 0.3s ease;
-}
-.icon-wrapper {
-  transition: all 0.3s ease;
-}
-.feature-image {
-  z-index: 0;
-}
-.feature-card > div {
-  z-index: 1;
-}
+        /* News ticker */
+        .ticker-container {
+          width: 100%;
+          overflow: hidden;
+          background: #fff;
+          padding: 0.75rem 0;
+          border-top: 1px solid rgba(0,0,0,0.05);
+          border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .ticker-content {
+          display: inline-block;
+          white-space: nowrap;
+          animation: ticker 25s linear infinite;
+        }
+        .ticker-item {
+          display: inline-flex;
+          align-items: center;
+          margin-right: 2rem;
+          font-size: 1rem;
+          color: #333;
+        }
+        .ticker-icon {
+          margin-right: 0.5rem;
+          font-size: 1.25rem;
+          color: #667eea;
+        }
+        @keyframes ticker {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        /* Pause on hover */
+        .ticker-container:hover .ticker-content {
+          animation-play-state: paused;
+        }
+        @media (max-width: 768px) {
+          .ticker-item {
+            font-size: 0.875rem;
+            margin-right: 1rem;
+          }
+          .ticker-icon {
+            font-size: 1rem;
+          }
+          .category-card-horizontal {
+            width: 220px;
+          }
+          .category-img-horizontal {
+            height: 170px;
+          }
+        }
       `}</style>
     </div>
   );

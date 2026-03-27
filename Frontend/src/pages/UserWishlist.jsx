@@ -24,40 +24,21 @@ function UserWishlist() {
 
   const fetchWishlist = async () => {
     try {
-      // Mock data - replace with actual API call
-      // const response = await userAPI.getWishlist();
-      // setWishlist(response.data);
-      
-      setWishlist([
-        {
-          id: 1,
-          name: 'Wireless Headphones',
-          price: 15000,
-          image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200',
-          rating: 4.5,
-          reviews: 128,
-          inStock: true
-        },
-        {
-          id: 2,
-          name: 'Running Shoes',
-          price: 25000,
-          image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200',
-          rating: 4.8,
-          reviews: 256,
-          inStock: true
-        },
-        {
-          id: 3,
-          name: 'Smart Watch',
-          price: 45000,
-          image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200',
-          rating: 4.6,
-          reviews: 89,
-          inStock: false
+      const response = await userAPI.getWishlist();
+      // Adjust based on actual response structure
+      let items = [];
+      if (response.data) {
+        if (Array.isArray(response.data)) {
+          items = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          items = response.data.data;
+        } else if (response.data.wishlist && Array.isArray(response.data.wishlist)) {
+          items = response.data.wishlist;
         }
-      ]);
+      }
+      setWishlist(items);
     } catch (error) {
+      console.error('Failed to load wishlist:', error);
       toast.error('Failed to load wishlist');
     } finally {
       setLoading(false);
@@ -66,10 +47,11 @@ function UserWishlist() {
 
   const handleRemove = async (productId) => {
     try {
-      // await userAPI.removeFromWishlist(productId);
+      await userAPI.removeFromWishlist(productId);
       setWishlist(wishlist.filter(item => item.id !== productId));
       toast.success('Removed from wishlist');
     } catch (error) {
+      console.error('Failed to remove item:', error);
       toast.error('Failed to remove item');
     }
   };
@@ -102,8 +84,20 @@ function UserWishlist() {
   };
 
   const filteredWishlist = wishlist.filter(item =>
-    item.name.toLowerCase().includes(search.toLowerCase())
+    item.name?.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -145,8 +139,9 @@ function UserWishlist() {
                 <div className="position-relative">
                   <Card.Img 
                     variant="top" 
-                    src={product.image} 
+                    src={product.image_url || product.image || 'https://via.placeholder.com/200'} 
                     style={{ height: '200px', objectFit: 'cover' }}
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/200?text=No+Image'; }}
                   />
                   <Button
                     variant="link"
@@ -160,13 +155,13 @@ function UserWishlist() {
                   <Card.Title className="h6">{product.name}</Card.Title>
                   <div className="d-flex align-items-center mb-2">
                     <span className="text-warning me-2">★</span>
-                    <span className="fw-medium">{product.rating}</span>
-                    <span className="text-muted ms-2">({product.reviews})</span>
+                    <span className="fw-medium">{product.rating || '4.0'}</span>
+                    <span className="text-muted ms-2">({product.reviews || 0})</span>
                   </div>
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h5 className="text-primary mb-0">₦{product.price.toLocaleString()}</h5>
-                    <Badge bg={product.inStock ? 'success' : 'danger'}>
-                      {product.inStock ? 'In Stock' : 'Out of Stock'}
+                    <h5 className="text-primary mb-0">₦{(product.price || 0).toLocaleString()}</h5>
+                    <Badge bg={product.stock_quantity > 0 ? 'success' : 'danger'}>
+                      {product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
                     </Badge>
                   </div>
                   <div className="d-flex gap-2">
@@ -174,7 +169,7 @@ function UserWishlist() {
                       variant="primary" 
                       className="flex-grow-1"
                       onClick={() => handleAddToCart(product)}
-                      disabled={!product.inStock}
+                      disabled={product.stock_quantity <= 0}
                     >
                       <FaShoppingCart className="me-2" /> Add to Cart
                     </Button>

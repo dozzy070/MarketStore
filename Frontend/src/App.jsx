@@ -28,6 +28,10 @@ import TermsConditions from './pages/TermsConditions';
 import TrackOrder from './pages/TrackOrder';
 import ShippingInfo from './pages/ShippingInfo';
 import ReturnsRefunds from './pages/ReturnsRefunds';
+import Charity from './pages/Charity';
+import Blog from './pages/Blog';
+import BecomeVendor from './pages/BecomeVendor';
+import BuyerSafety from './pages/BuyerSafety';
 
 
 
@@ -161,6 +165,10 @@ function App() {
             <Route path="/shipping" element={<ShippingInfo />} />
             <Route path="/track" element={<TrackOrder />} />
             <Route path="/returns" element={<ReturnsRefunds />} />
+            <Route path="/charity" element={<Charity />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/become-vendor" element={<BecomeVendor />} />
+            <Route path="/buyer-safety" element={<BuyerSafety />} />
 
             {/* Public Store Routes */}
             <Route path="/stores" element={<Stores />} />

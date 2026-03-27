@@ -10,10 +10,8 @@ import {
   FaSave, 
   FaTimes,
   FaCheckCircle,
-  FaStar,
   FaBox,
   FaCalendar,
-  FaShoppingBag,
   FaHeart
 } from 'react-icons/fa';
 import DashboardLayout from '../components/DashboardLayout';
@@ -26,9 +24,6 @@ function Profile() {
   const [editing, setEditing] = useState(false);
   const [stats, setStats] = useState({
     products: 0,
-    totalSales: 0,
-    reviews: 0,
-    wishlist: 0,
     joined: ''
   });
   
@@ -71,9 +66,6 @@ function Profile() {
       
       setStats({
         products: statsRes.data.total_products || 0,
-        totalSales: statsRes.data.total_sales || 0,
-        reviews: statsRes.data.total_reviews || 42,
-        wishlist: statsRes.data.total_wishlist || 18,
         joined: new Date(profileRes.data.created_at).toLocaleDateString() || '2026'
       });
     } catch (error) {
@@ -155,9 +147,9 @@ function Profile() {
         </div>
       </motion.div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Only Products Count */}
       <Row className="g-4 mb-4">
-        <Col sm={6} md={3}>
+        <Col sm={6} md={4} className="mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -170,60 +162,6 @@ function Profile() {
                 </div>
                 <h3>{stats.products}</h3>
                 <p className="text-muted small mb-0">Products</p>
-              </Card.Body>
-            </Card>
-          </motion.div>
-        </Col>
-        
-        <Col sm={6} md={3}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <Card className="border-0 shadow-sm text-center stat-card">
-              <Card.Body>
-                <div className="stat-icon bg-success bg-opacity-10 mx-auto mb-3">
-                  <FaShoppingBag className="text-success" size={24} />
-                </div>
-                <h3>₦{stats.totalSales.toLocaleString()}</h3>
-                <p className="text-muted small mb-0">Total Sales</p>
-              </Card.Body>
-            </Card>
-          </motion.div>
-        </Col>
-        
-        <Col sm={6} md={3}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
-          >
-            <Card className="border-0 shadow-sm text-center stat-card">
-              <Card.Body>
-                <div className="stat-icon bg-warning bg-opacity-10 mx-auto mb-3">
-                  <FaStar className="text-warning" size={24} />
-                </div>
-                <h3>{stats.reviews}</h3>
-                <p className="text-muted small mb-0">Reviews</p>
-              </Card.Body>
-            </Card>
-          </motion.div>
-        </Col>
-        
-        <Col sm={6} md={3}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.4 }}
-          >
-            <Card className="border-0 shadow-sm text-center stat-card">
-              <Card.Body>
-                <div className="stat-icon bg-danger bg-opacity-10 mx-auto mb-3">
-                  <FaHeart className="text-danger" size={24} />
-                </div>
-                <h3>{stats.wishlist}</h3>
-                <p className="text-muted small mb-0">Wishlist</p>
               </Card.Body>
             </Card>
           </motion.div>
@@ -448,47 +386,7 @@ function Profile() {
             </Card>
           </motion.div>
 
-          {/* Activity Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.4 }}
-          >
-            <Card className="border-0 shadow-sm mt-4">
-              <Card.Header className="bg-white border-0 pt-4">
-                <h5 className="mb-0">Recent Activity</h5>
-              </Card.Header>
-              <Card.Body>
-                <div className="d-flex align-items-center mb-3">
-                  <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
-                    <FaBox className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="mb-0 fw-medium">Added 3 new products</p>
-                    <small className="text-muted">2 days ago</small>
-                  </div>
-                </div>
-                <div className="d-flex align-items-center mb-3">
-                  <div className="bg-success bg-opacity-10 rounded-circle p-2 me-3">
-                    <FaShoppingBag className="text-success" />
-                  </div>
-                  <div>
-                    <p className="mb-0 fw-medium">Received 5 new orders</p>
-                    <small className="text-muted">3 days ago</small>
-                  </div>
-                </div>
-                <div className="d-flex align-items-center">
-                  <div className="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
-                    <FaStar className="text-warning" />
-                  </div>
-                  <div>
-                    <p className="mb-0 fw-medium">Got 2 new 5-star reviews</p>
-                    <small className="text-muted">5 days ago</small>
-                  </div>
-                </div>
-              </Card.Body>
-            </Card>
-          </motion.div>
+          {/* Recent Activity section removed as per request */}
         </Col>
       </Row>
     </DashboardLayout>
