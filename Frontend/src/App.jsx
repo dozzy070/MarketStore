@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';   // remove BrowserRouter import
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
+import { useAuth } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -33,9 +32,6 @@ import Blog from './pages/Blog';
 import BecomeVendor from './pages/BecomeVendor';
 import BuyerSafety from './pages/BuyerSafety';
 
-
-
-
 // ==================== STORE PAGES ====================
 import Stores from './pages/Stores';
 import StoreDetails from './pages/StoreDetails';
@@ -43,8 +39,6 @@ import StoreProducts from './pages/StoreProducts';
 
 // ==================== HELP & SUPPORT PAGES ====================
 import HelpCenter from './pages/HelpCenter';
-// import FAQ from './pages/FAQ';  // already imported above
-// import Contact from './pages/Contact';  // already imported above
 
 // ==================== USER ROUTES ====================
 import UserDashboard from './pages/UserDashboard';
@@ -61,7 +55,7 @@ import OrdersShipping from './pages/help/OrdersShipping';
 import PaymentsHelp from './pages/help/PaymentsHelp';
 import VendorHelp from './pages/help/VendorHelp';
 import Policies from './pages/help/Policies';
-
+import UserPayments from './pages/UserPayments';
 
 // ==================== VENDOR ROUTES ====================
 import VendorDashboard from './pages/VendorDashboard';
@@ -72,7 +66,6 @@ import MyStore from './pages/MyStore';
 import VendorProfile from './pages/VendorProfile';
 import VendorSettings from './pages/VendorSettings';
 import VendorPayouts from './pages/VendorPayouts';
-import UserPayments from './pages/UserPayments';
 
 // ==================== VENDOR STORE ROUTES ====================
 import StoreSettings from './pages/StoreSettings';
@@ -144,177 +137,172 @@ const RoleRoute = ({ children, allowedRoles }) => {
 
 function App() {
   return (
-    <Router>
-      <ThemeProvider>
-        <AuthProvider>
-          <Toaster position="top-right" />
+    <>
+      <Toaster position="top-right" />
+      <Routes>
+        {/* ========== PUBLIC ROUTES ========== */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/product/:id" element={<ProductDetails />} />
+        <Route path="/category/:categoryId" element={<CategoryProducts />} />
+        <Route path="/search" element={<SearchResults />} />
+        <Route path="/categories" element={<Categories />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/auth/google-callback" element={<GoogleCallback />} />
+        <Route path="/shipping" element={<ShippingInfo />} />
+        <Route path="/track" element={<TrackOrder />} />
+        <Route path="/returns" element={<ReturnsRefunds />} />
+        <Route path="/charity" element={<Charity />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/become-vendor" element={<BecomeVendor />} />
+        <Route path="/buyer-safety" element={<BuyerSafety />} />
 
-          <Routes>
-            {/* ========== PUBLIC ROUTES ========== */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/product/:id" element={<ProductDetails />} />
-            <Route path="/category/:categoryId" element={<CategoryProducts />} />
-            <Route path="/search" element={<SearchResults />} />
-            <Route path="/categories" element={<Categories />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/auth/google-callback" element={<GoogleCallback />} />
-            <Route path="/shipping" element={<ShippingInfo />} />
-            <Route path="/track" element={<TrackOrder />} />
-            <Route path="/returns" element={<ReturnsRefunds />} />
-            <Route path="/charity" element={<Charity />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/become-vendor" element={<BecomeVendor />} />
-            <Route path="/buyer-safety" element={<BuyerSafety />} />
+        {/* Public Store Routes */}
+        <Route path="/stores" element={<Stores />} />
+        <Route path="/stores/:id" element={<StoreDetails />} />
+        <Route path="/stores/:id/products" element={<StoreProducts />} />
 
-            {/* Public Store Routes */}
-            <Route path="/stores" element={<Stores />} />
-            <Route path="/stores/:id" element={<StoreDetails />} />
-            <Route path="/stores/:id/products" element={<StoreProducts />} />
+        {/* ========== PUBLIC INFO PAGES ========== */}
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/terms" element={<TermsConditions />} />
 
-            {/* ========== PUBLIC INFO PAGES ========== */}
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/about" element={<AboutUs />} />
-            <Route path="/terms" element={<TermsConditions />} />
+        {/* ========== HELP CENTER (protected) ========== */}
+        <Route path="/help" element={<PrivateRoute><HelpCenter /></PrivateRoute>} />
+        <Route path="/help/faq" element={<PrivateRoute><FAQ /></PrivateRoute>} />
+        <Route path="/help/contact" element={<PrivateRoute><Contact /></PrivateRoute>} />
+        <Route path="/help/account" element={<PrivateRoute><AccountHelp /></PrivateRoute>} />
+        <Route path="/help/orders" element={<PrivateRoute><OrdersShipping /></PrivateRoute>} />
+        <Route path="/help/payments" element={<PrivateRoute><PaymentsHelp /></PrivateRoute>} />
+        <Route path="/help/vendor" element={<PrivateRoute><VendorHelp /></PrivateRoute>} />
+        <Route path="/help/policies" element={<PrivateRoute><Policies /></PrivateRoute>} />
 
-            {/* ========== HELP CENTER (protected) ========== */}
-            <Route path="/help" element={<PrivateRoute><HelpCenter /></PrivateRoute>} />
-            <Route path="/help/faq" element={<PrivateRoute><FAQ /></PrivateRoute>} />
-            <Route path="/help/contact" element={<PrivateRoute><Contact /></PrivateRoute>} />
-            <Route path="/help/account" element={<PrivateRoute><AccountHelp /></PrivateRoute>} />
-            <Route path="/help/orders" element={<PrivateRoute><OrdersShipping /></PrivateRoute>} />
-            <Route path="/help/payments" element={<PrivateRoute><PaymentsHelp /></PrivateRoute>} />
-            <Route path="/help/vendor" element={<PrivateRoute><VendorHelp /></PrivateRoute>} />
-            <Route path="/help/policies" element={<PrivateRoute><Policies /></PrivateRoute>} />
+        {/* ========== SETTINGS ROUTES - PUBLIC ========== */}
+        <Route path="/settings" element={<UserSettings />} />
+        <Route path="/user/settings" element={<UserSettings />} />
+        <Route path="/vendor/settings" element={<VendorSettings />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
 
-            {/* ========== SETTINGS ROUTES - PUBLIC ========== */}
-            <Route path="/settings" element={<UserSettings />} />
-            <Route path="/user/settings" element={<UserSettings />} />
-            <Route path="/vendor/settings" element={<VendorSettings />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
+        {/* ========== PROFILE ROUTES - AUTH ONLY ========== */}
+        <Route path="/profile" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
+        <Route path="/user/profile" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
+        <Route path="/vendor/profile" element={<PrivateRoute><VendorProfile /></PrivateRoute>} />
+        <Route path="/admin/profile" element={<PrivateRoute><AdminProfile /></PrivateRoute>} />
 
-            {/* ========== PROFILE ROUTES - AUTH ONLY ========== */}
-            <Route path="/profile" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
-            <Route path="/user/profile" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
-            <Route path="/vendor/profile" element={<PrivateRoute><VendorProfile /></PrivateRoute>} />
-            <Route path="/admin/profile" element={<PrivateRoute><AdminProfile /></PrivateRoute>} />
+        {/* ========== USER ROUTES ========== */}
+        <Route path="/user/dashboard" element={
+          <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><UserDashboard /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/user/orders" element={
+          <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><UserOrders /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/user/orders/:id" element={
+          <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><OrderTracking /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/user/wishlist" element={
+          <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><UserWishlist /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/user/reviews" element={
+          <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><UserReviews /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/activity" element={
+          <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><ActivityLog /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/checkout" element={
+          <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><Checkout /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/user/payments" element={<DashboardLayout><UserPayments /></DashboardLayout>} />
 
-            {/* ========== USER ROUTES ========== */}
-            <Route path="/user/dashboard" element={
-              <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><UserDashboard /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/user/orders" element={
-              <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><UserOrders /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/user/orders/:id" element={
-              <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><OrderTracking /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/user/wishlist" element={
-              <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><UserWishlist /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/user/reviews" element={
-              <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><UserReviews /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/activity" element={
-              <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><ActivityLog /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/checkout" element={
-              <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><Checkout /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/user/payments" element={<DashboardLayout><UserPayments /></DashboardLayout>} />
+        {/* ========== VENDOR ROUTES ========== */}
+        <Route path="/vendor/dashboard" element={
+          <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><VendorDashboard /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/vendor/products" element={
+          <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><Products /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/vendor/products/add" element={
+          <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><AddProduct /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/vendor/products/edit/:id" element={
+          <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><AddProduct /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/vendor/orders" element={
+          <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><VendorOrders /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/vendor/payouts" element={
+          <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><VendorPayouts /></RoleRoute></PrivateRoute>
+        } />
 
-            {/* ========== VENDOR ROUTES ========== */}
-            <Route path="/vendor/dashboard" element={
-              <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><VendorDashboard /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/vendor/products" element={
-              <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><Products /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/vendor/products/add" element={
-              <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><AddProduct /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/vendor/products/edit/:id" element={
-              <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><AddProduct /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/vendor/orders" element={
-              <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><VendorOrders /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/vendor/payouts" element={
-              <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><VendorPayouts /></RoleRoute></PrivateRoute>
-            } />
+        {/* Vendor Store Routes */}
+        <Route path="/vendor/store" element={
+          <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><MyStore /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/vendor/store/settings" element={
+          <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><StoreSettings /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/vendor/store/products" element={
+          <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><Products /></RoleRoute></PrivateRoute>
+        } />
 
-            {/* Vendor Store Routes */}
-            <Route path="/vendor/store" element={
-              <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><MyStore /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/vendor/store/settings" element={
-              <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><StoreSettings /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/vendor/store/products" element={
-              <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><Products /></RoleRoute></PrivateRoute>
-            } />
+        {/* ========== ADMIN ROUTES ========== */}
+        <Route path="/admin/dashboard" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminDashboard /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/users" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminUsers /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/users/create" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminCreateUser /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/vendors" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminVendors /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/products" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminProducts /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/orders" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminOrders /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/categories" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminCategories /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/reviews" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminReviews /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/audit-log" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminAuditLog /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/analytics" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminAnalytics /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/pending-approvals" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminPendingApprovals /></RoleRoute></PrivateRoute>
+        } />
 
-            {/* ========== ADMIN ROUTES ========== */}
-            <Route path="/admin/dashboard" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminDashboard /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/users" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminUsers /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/users/create" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminCreateUser /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/vendors" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminVendors /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/products" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminProducts /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/orders" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminOrders /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/categories" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminCategories /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/reviews" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminReviews /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/audit-log" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminAuditLog /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/analytics" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminAnalytics /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/pending-approvals" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminPendingApprovals /></RoleRoute></PrivateRoute>
-            } />
+        {/* Admin Store Routes */}
+        <Route path="/admin/stores" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminStores /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/stores/:id" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminStoreDetails /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/admin/stores/:id/approve" element={
+          <PrivateRoute><RoleRoute allowedRoles={['admin']}><ApproveStore /></RoleRoute></PrivateRoute>
+        } />
 
-            {/* Admin Store Routes */}
-            <Route path="/admin/stores" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminStores /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/stores/:id" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><AdminStoreDetails /></RoleRoute></PrivateRoute>
-            } />
-            <Route path="/admin/stores/:id/approve" element={
-              <PrivateRoute><RoleRoute allowedRoles={['admin']}><ApproveStore /></RoleRoute></PrivateRoute>
-            } />
+        {/* ========== DASHBOARD REDIRECT ========== */}
+        <Route path="/dashboard" element={
+          <PrivateRoute><DashboardRedirectHandler /></PrivateRoute>
+        } />
 
-            {/* ========== DASHBOARD REDIRECT ========== */}
-            <Route path="/dashboard" element={
-              <PrivateRoute><DashboardRedirectHandler /></PrivateRoute>
-            } />
-
-            {/* 404 - Not Found */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AuthProvider>
-      </ThemeProvider>
-    </Router>
+        {/* 404 - Not Found */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
 

@@ -1,7 +1,17 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
+
+// Helper to generate a unique session ID (falls back to timestamp+random)
+const generateSessionId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
 
 // Custom hook to use auth context
 export const useAuth = () => {
@@ -17,6 +27,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -29,12 +40,30 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       const userData = localStorage.getItem('user');
-      
+      const storedSessionId = localStorage.getItem('sessionId');
+      const tabSessionId = sessionStorage.getItem('sessionId');
+
       console.log('🔐 AuthProvider - Storage check:', { 
         token: token ? 'exists' : 'missing', 
-        userData: userData ? 'exists' : 'missing' 
+        userData: userData ? 'exists' : 'missing',
+        storedSessionId: storedSessionId ? 'exists' : 'missing',
+        tabSessionId: tabSessionId ? 'exists' : 'missing'
       });
 
+      // If there's a token but the session IDs don't match, this is a new tab
+      if (token && userData && storedSessionId && storedSessionId !== tabSessionId) {
+        console.log('🔐 AuthProvider - New tab detected! Logging out.');
+        // Clear local state only – keep localStorage for other tabs
+        setUser(null);
+        setIsAuthenticated(false);
+        sessionStorage.removeItem('sessionId'); // prevent future mismatches
+        navigate('/login');
+        toast.error('Session active in another tab. Please log in again to continue.');
+        setLoading(false);
+        return;
+      }
+
+      // Normal load if session IDs match (or no sessionId present – treat as old session)
       if (token && userData) {
         const parsedUser = JSON.parse(userData);
         console.log('🔐 AuthProvider - User loaded from storage:', parsedUser);
@@ -44,6 +73,16 @@ export const AuthProvider = ({ children }) => {
         
         setUser(parsedUser);
         setIsAuthenticated(true);
+        
+        // Ensure sessionId exists (for backwards compatibility)
+        if (!storedSessionId) {
+          const newSessionId = generateSessionId();
+          localStorage.setItem('sessionId', newSessionId);
+          sessionStorage.setItem('sessionId', newSessionId);
+        } else if (!tabSessionId) {
+          // If we have a stored sessionId but no tabSessionId (e.g., first load after update)
+          sessionStorage.setItem('sessionId', storedSessionId);
+        }
       } else {
         console.log('🔐 AuthProvider - No stored credentials found');
         setUser(null);
@@ -53,6 +92,8 @@ export const AuthProvider = ({ children }) => {
       console.error('🔐 AuthProvider - Error loading from storage:', error);
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('sessionId');
+      sessionStorage.removeItem('sessionId');
       setUser(null);
       setIsAuthenticated(false);
     } finally {
@@ -106,8 +147,13 @@ export const AuthProvider = ({ children }) => {
       if (token && user) {
         console.log('✅ Successfully extracted token and user:', { token: token.substring(0, 20) + '...', user });
         
+        // Generate a unique session ID for this tab
+        const sessionId = generateSessionId();
+        
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('sessionId', sessionId);
+        sessionStorage.setItem('sessionId', sessionId);
         
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
@@ -137,6 +183,8 @@ export const AuthProvider = ({ children }) => {
     
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('sessionId');
+    sessionStorage.removeItem('sessionId');
     
     delete axios.defaults.headers.common['Authorization'];
     
@@ -144,6 +192,8 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     
     console.log('🔐 AuthProvider - Logout complete');
+    navigate('/login');
+    toast.success('Logged out successfully');
   };
 
   const register = async (userData) => {
@@ -170,8 +220,12 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (token && user) {
+        const sessionId = generateSessionId();
+        
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('sessionId', sessionId);
+        sessionStorage.setItem('sessionId', sessionId);
         
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         

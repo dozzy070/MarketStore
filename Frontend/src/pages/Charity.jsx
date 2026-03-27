@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Button, Image, Modal } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
   FaHandsHelping, FaCheckCircle, FaHeart, FaUserGraduate, FaSeedling, 
@@ -8,8 +7,6 @@ import {
 } from 'react-icons/fa';
 
 function Charity() {
-  const navigate = useNavigate();
-  // State for modals
   const [showModal, setShowModal] = useState({ type: null, id: null });
 
   // Initiative details (for modals)
@@ -34,29 +31,29 @@ function Charity() {
     },
   };
 
-  // Partners data (African organisations)
+  // Partners data with working image URLs
   const partners = [
     {
       name: 'The Education Trust Africa',
-      logo: 'https://via.placeholder.com/120x60?text=Education+Trust',
+      logo: 'https://placehold.co/120x60/4CAF50/white?text=Education+Trust',
       description: 'A non‑profit dedicated to improving educational outcomes for children across Nigeria through infrastructure, scholarships, and teacher training.',
       website: 'https://educationtrust.ng',
     },
     {
       name: 'TechHer Nigeria',
-      logo: 'https://via.placeholder.com/120x60?text=TechHer',
+      logo: 'https://placehold.co/120x60/2196F3/white?text=TechHer',
       description: 'Empowering women and girls with digital skills, advocacy for safe online spaces, and technology innovation.',
       website: 'https://techher.org',
     },
     {
       name: 'Farmers Hub Cooperative',
-      logo: 'https://via.placeholder.com/120x60?text=Farmers+Hub',
+      logo: 'https://placehold.co/120x60/FF9800/white?text=Farmers+Hub',
       description: 'A cooperative of small‑scale farmers that provides training, market access, and fair trade practices across West Africa.',
       website: 'https://farmershub.ng',
     },
     {
       name: 'Lagos Food Bank Initiative',
-      logo: 'https://via.placeholder.com/120x60?text=Lagos+Food+Bank',
+      logo: 'https://placehold.co/120x60/E91E63/white?text=Lagos+Food+Bank',
       description: 'Fighting hunger and malnutrition through sustainable food support and community outreach programmes.',
       website: 'https://lagosfoodbank.org',
     },
@@ -131,11 +128,9 @@ function Charity() {
   // Donate / Volunteer handlers
   const handleDonate = () => {
     toast.success('Donation page coming soon! Stay tuned.');
-    navigate('/donate');  // Optional: remove if you don't have the route yet
   };
   const handleVolunteer = () => {
     toast.success('Volunteer sign‑up will be available soon!');
-    navigate('/volunteer'); // Optional
   };
 
   return (
@@ -193,6 +188,9 @@ function Charity() {
           opacity: 0.6;
           transition: all 0.3s ease;
           cursor: pointer;
+          max-height: 60px;
+          width: auto;
+          object-fit: contain;
         }
         .partner-logo:hover {
           filter: grayscale(0%);
@@ -314,8 +312,12 @@ function Charity() {
                 src={partner.logo} 
                 fluid 
                 className="partner-logo" 
-                style={{ maxHeight: '60px' }}
+                style={{ maxHeight: '60px', width: 'auto' }}
                 onClick={() => openPartnerModal(partner.name, partner.description, partner.website)}
+                onError={(e) => {
+                  // Fallback if image fails to load
+                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="60" viewBox="0 0 120 60"%3E%3Crect width="120" height="60" fill="%23cccccc"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23666"%3EPartner%3C/text%3E%3C/svg%3E';
+                }}
               />
               <p className="small text-muted mt-2">{partner.name}</p>
             </Col>
