@@ -1,5 +1,9 @@
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
+import dns from "dns";
+
+// 🔥 FORCE IPv4 (fixes ENETUNREACH)
+dns.setDefaultResultOrder("ipv4first");
 
 // Configure email transporter with IPv4 preference
 const transporter = nodemailer.createTransport({
