@@ -6,29 +6,19 @@ import dns from "dns";
 dns.setDefaultResultOrder("ipv4first");
 
 // Email transporter
-const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 465,
-  secure: true,
+export const transporter = nodemailer.createTransport({
+  service: 'gmail',
   auth: {
-    user: process.env.BREVO_EMAIL,
-    pass: process.env.BREVO_SMTP_KEY,
+    user: process.env.GMAIL_EMAIL,
+    pass: process.env.GMAIL_PASSWORD,
   },
 });
 
-// Verify transporter configuration
-const verifyTransporter = async () => {
-  try {
-    await transporter.verify();
-    console.log('✅ Email server is ready to send messages');
-    return true;
-  } catch (error) {
-    console.error('❌ Email transporter error:', error.message);
-    return false;
-  }
-};
+// Verify transporter
+transporter.verify().then(() => console.log('✅ Gmail SMTP ready to send emails'))
+  .catch(err => console.error('❌ Gmail SMTP error:', err));
 
-verifyTransporter();
+// verifyTransporter();
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 console.log('FRONTEND_URL used in emails:', FRONTEND_URL);
@@ -196,7 +186,7 @@ export const sendEmail = async (to, subject, html) => {
     }
 
     const info = await transporter.sendMail({
-      from: `"MarketStore" <${process.env.BREVO_EMAIL}>`,
+      from: `"MarketStore" <${process.env.GMAIL_EMAIL}>`,
       to,
       subject,
       html,
