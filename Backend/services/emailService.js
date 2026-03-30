@@ -1,3 +1,4 @@
+// backend/services/emailService.js
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import dns from "dns";
@@ -5,26 +6,28 @@ import dns from "dns";
 // 🔥 FORCE IPv4 (fixes ENETUNREACH)
 dns.setDefaultResultOrder("ipv4first");
 
-// Email transporter
-export const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_EMAIL,
-    pass: process.env.GMAIL_PASSWORD,
-  },
-});
-
-// Verify transporter
-transporter.verify().then(() => console.log('✅ Gmail SMTP ready to send emails'))
-  .catch(err => console.error('❌ Gmail SMTP error:', err));
-
-// verifyTransporter();
-
+// Frontend URL
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 console.log('FRONTEND_URL used in emails:', FRONTEND_URL);
 
 // =====================
-// Email Templates
+// Email transporter (using the correct env vars)
+// =====================
+export const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,     // ✅ matches your .env
+    pass: process.env.EMAIL_PASS,     // ✅ matches your .env
+  },
+});
+
+// Verify transporter
+transporter.verify()
+  .then(() => console.log('✅ Gmail SMTP ready to send emails'))
+  .catch(err => console.error('❌ Gmail SMTP error:', err));
+
+// =====================
+// Email Templates (full versions)
 // =====================
 const emailTemplates = {
   welcome: (name, email, role) => ({
@@ -172,7 +175,99 @@ const emailTemplates = {
     `,
   }),
 
-  // ... include all remaining templates exactly as in your original code
+  passwordChanged: (name) => ({
+    subject: `Your MarketStore Password Has Been Changed`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
+        <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
+          <h1 style="color: white; margin: 0;">MarketStore</h1>
+        </div>
+        <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
+          <h2>Hello ${name},</h2>
+          <p>Your MarketStore password was successfully changed.</p>
+          <p>If you did not make this change, please contact support immediately.</p>
+          <a href="${FRONTEND_URL}/support" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 20px;">
+            Contact Support
+          </a>
+        </div>
+      </div>
+    `,
+  }),
+
+  paymentConfirmation: (name, amount, reference, orderId) => ({
+    subject: `Payment Confirmation - ${reference}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
+        <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
+          <h1 style="color: white; margin: 0;">MarketStore</h1>
+        </div>
+        <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
+          <h2>Payment Confirmed! ✅</h2>
+          <p>Hello ${name},</p>
+          <p>Your payment of <strong>₦${amount}</strong> for order <strong>${orderId}</strong> has been confirmed.</p>
+          <p>Transaction Reference: <strong>${reference}</strong></p>
+          <a href="${FRONTEND_URL}/orders/${orderId}" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 20px;">
+            View Order
+          </a>
+        </div>
+      </div>
+    `,
+  }),
+
+  payoutNotification: (name, amount, reference, status) => ({
+    subject: `Payout Notification - ${status}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
+        <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
+          <h1 style="color: white; margin: 0;">MarketStore</h1>
+        </div>
+        <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
+          <h2>Payout Update</h2>
+          <p>Hello ${name},</p>
+          <p>Your payout of <strong>₦${amount}</strong> (Ref: ${reference}) is now <strong>${status.toUpperCase()}</strong>.</p>
+          <p>Thank you for selling with us!</p>
+        </div>
+      </div>
+    `,
+  }),
+
+  payoutApproval: (name, amount, reference, bankDetails) => ({
+    subject: `Payout Approved - ${reference}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
+        <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
+          <h1 style="color: white; margin: 0;">MarketStore</h1>
+        </div>
+        <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
+          <h2>Payout Approved! 🎉</h2>
+          <p>Hello ${name},</p>
+          <p>Your payout request of <strong>₦${amount}</strong> (Ref: ${reference}) has been approved and will be sent to ${bankDetails}.</p>
+          <p>Funds should reflect within 2–3 business days.</p>
+        </div>
+      </div>
+    `,
+  }),
+
+  payoutRejection: (name, amount, reason, reference) => ({
+    subject: `Payout Rejected - ${reference}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
+        <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
+          <h1 style="color: white; margin: 0;">MarketStore</h1>
+        </div>
+        <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
+          <h2>Payout Update</h2>
+          <p>Hello ${name},</p>
+          <p>Your payout request of <strong>₦${amount}</strong> (Ref: ${reference}) was rejected.</p>
+          <p><strong>Reason:</strong> ${reason}</p>
+          <p>Please update your payout details and try again.</p>
+          <a href="${FRONTEND_URL}/vendor/payouts" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 20px;">
+            Update Payout Info
+          </a>
+        </div>
+      </div>
+    `,
+  }),
 };
 
 // =====================
@@ -180,17 +275,18 @@ const emailTemplates = {
 // =====================
 export const sendEmail = async (to, subject, html) => {
   try {
-    if (!process.env.BREVO_EMAIL || !process.env.BREVO_SMTP_KEY) {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       console.log('📧 Email credentials not configured, skipping email');
       return { success: true, messageId: 'skipped' };
     }
 
     const info = await transporter.sendMail({
-      from: `"MarketStore" <${process.env.GMAIL_EMAIL}>`,
+      from: `"MarketStore" <${process.env.EMAIL_USER}>`, // ✅ uses EMAIL_USER
       to,
       subject,
       html,
     });
+
     console.log(`✅ Email sent to ${to}: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
@@ -200,7 +296,7 @@ export const sendEmail = async (to, subject, html) => {
 };
 
 // =====================
-// Exported Functions
+// Exported Email Functions
 // =====================
 export const sendWelcomeEmail = async (user) => {
   const template = emailTemplates.welcome(user.full_name, user.email, user.role);
@@ -252,6 +348,9 @@ export const sendPayoutRejectionEmail = async (user, amount, reason, reference) 
   return await sendEmail(user.email, template.subject, template.html);
 };
 
+// =====================
+// Default Export
+// =====================
 export default {
   sendWelcomeEmail,
   sendVendorApprovalEmail,
