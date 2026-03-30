@@ -16,7 +16,7 @@ import {
 
 const router = express.Router();
 
-// Helper to get client IP and device info (used only for login alert)
+// Helper functions
 const getClientInfo = (req) => {
   const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress;
   const userAgent = req.headers['user-agent'];
@@ -29,7 +29,6 @@ const getClientInfo = (req) => {
   return { ip, device, userAgent };
 };
 
-// Simple location from IP (extend with a geolocation API if needed)
 const getLocationFromIp = async (ip) => {
   if (ip === '::1' || ip === '127.0.0.1') return 'Localhost';
   return 'Unknown Location';
@@ -42,10 +41,12 @@ router.post('/register', [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('role').optional().isIn(['user', 'vendor'])
 ], async (req, res) => {
+  console.log('📥 [REGISTER] Request received');
   let client;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ [REGISTER] Validation errors:', errors.array());
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
@@ -68,6 +69,7 @@ router.post('/register', [
     // Check existing user
     const existing = await client.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
     if (existing.rows.length > 0) {
+      console.log('❌ [REGISTER] Email already exists:', email);
       return res.status(400).json({ success: false, message: 'User with this email already exists' });
     }
 
@@ -89,9 +91,9 @@ router.post('/register', [
     );
 
     const user = userResult.rows[0];
-    console.log('✅ User created successfully:', user.id);
+    console.log('✅ [REGISTER] User created successfully:', user.id);
 
-    // Vendor application (non‑email logic, but kept for functionality)
+    // Vendor application (if needed)
     if (isVendor) {
       const tableCheck = await client.query(`
         SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'vendor_applications')
@@ -111,13 +113,21 @@ router.post('/register', [
             storeDescription || `${fullName}'s store`
           ]
         );
-        console.log('📝 Vendor application created for user:', user.id);
+        console.log('📝 [REGISTER] Vendor application created for user:', user.id);
+      } else {
+        console.warn('⚠️ [REGISTER] vendor_applications table does not exist. Skipping vendor application creation.');
       }
     }
 
     // ─── EMAIL SERVICE INTEGRATION ─────────────────────────────
-    // Send welcome email (non‑blocking)
-    sendWelcomeEmail(user).catch(err => console.error('Welcome email error:', err));
+    console.log('📧 [REGISTER] About to send welcome email to:', user.email);
+    try {
+      const emailResult = await sendWelcomeEmail(user); // <-- using await to catch errors
+      console.log('📧 [REGISTER] Welcome email result:', emailResult);
+    } catch (emailErr) {
+      console.error('❌ [REGISTER] Welcome email error:', emailErr);
+      // Do not break registration flow if email fails
+    }
     // ────────────────────────────────────────────────────────────
 
     // Generate JWT
@@ -147,7 +157,7 @@ router.post('/register', [
       token
     });
   } catch (error) {
-    console.error('❌ Registration error:', error);
+    console.error('❌ [REGISTER] Error:', error);
     res.status(500).json({ success: false, message: 'Server error during registration' });
   } finally {
     if (client) client.release();
@@ -367,11 +377,10 @@ router.get('/google/callback', passport.authenticate('google', { session: false,
 
     // ─── EMAIL SERVICE INTEGRATION ─────────────────────────────
     // Send welcome email for OAuth users (if they are new)
-    // The `user` object from passport includes a `isNew` flag (set in passport config)
     if (user.isNew) {
       sendWelcomeEmail(user).catch(err => console.error('OAuth welcome email error:', err));
     }
-    // Optionally send login alert email as well – similar to normal login
+    // Login alert email
     const { ip, device } = getClientInfo(req);
     const location = await getLocationFromIp(ip);
     sendLoginAlertEmail(user, ip, device, location).catch(err => console.error('OAuth login alert error:', err));

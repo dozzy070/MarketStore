@@ -1,7 +1,9 @@
 // backend/server.js
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -24,8 +26,6 @@ import reviewsRoutes from './routes/reviews.routes.js';
 import passport from './db/passport.js';
 
 import pool from './db/db.js';
-
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,6 +98,17 @@ app.use('/api/vendor/payouts', vendorPayoutRoutes);
 app.use('/api/admin', adminPayoutRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use(passport.initialize());
+
+app.get('/test-email', async (req, res) => {
+  try {
+    const { sendEmail } = await import('./services/emailService.js');
+    const result = await sendEmail('dozzydivinec@gmail.com', 'Test Subject', '<h1>Test email</h1>');
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Test route
 app.get('/test', (req, res) => {
@@ -186,3 +197,4 @@ process.on('SIGINT', async () => {
   console.log('✅ Database connections closed');
   process.exit(0);
 });
+

@@ -11,23 +11,34 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 console.log('FRONTEND_URL used in emails:', FRONTEND_URL);
 
 // =====================
-// Email transporter (using the correct env vars)
+// Environment variable check for Brevo
+// =====================
+console.log('🔍 Checking email credentials:');
+console.log('EMAIL_HOST:', process.env.EMAIL_HOST || '❌ missing (default: smtp-relay.brevo.com)');
+console.log('EMAIL_USER:', process.env.EMAIL_USER ? '✅ set' : '❌ missing');
+console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? '✅ set' : '❌ missing');
+console.log('EMAIL_FROM:', process.env.EMAIL_FROM ? '✅ set' : '❌ missing');
+
+// =====================
+// Email transporter (Brevo SMTP)
 // =====================
 export const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: process.env.EMAIL_HOST || 'smtp-relay.brevo.com',
+  port: process.env.EMAIL_PORT || 587,
+  secure: false, // false for 587, true for 465
   auth: {
-    user: process.env.EMAIL_USER,     // ✅ matches your .env
-    pass: process.env.EMAIL_PASS,     // ✅ matches your .env
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
 // Verify transporter
 transporter.verify()
-  .then(() => console.log('✅ Gmail SMTP ready to send emails'))
-  .catch(err => console.error('❌ Gmail SMTP error:', err));
+  .then(() => console.log('✅ Brevo SMTP ready to send emails'))
+  .catch(err => console.error('❌ Brevo SMTP error:', err));
 
 // =====================
-// Email Templates (full versions)
+// Email Templates (full versions – your existing templates)
 // =====================
 const emailTemplates = {
   welcome: (name, email, role) => ({
@@ -274,14 +285,17 @@ const emailTemplates = {
 // Send Email Function
 // =====================
 export const sendEmail = async (to, subject, html) => {
+  console.log(`📧 sendEmail called: to=${to}, subject=${subject}`);
+
   try {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.log('📧 Email credentials not configured, skipping email');
+      console.log('⚠️ Email credentials not configured, skipping email');
       return { success: true, messageId: 'skipped' };
     }
 
+    console.log('📤 Attempting to send email via Brevo...');
     const info = await transporter.sendMail({
-      from: `"MarketStore" <${process.env.EMAIL_USER}>`, // ✅ uses EMAIL_USER
+      from: `"MarketStore" <${process.env.EMAIL_FROM}>`, // verified sender
       to,
       subject,
       html,
@@ -291,6 +305,7 @@ export const sendEmail = async (to, subject, html) => {
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ Email sending failed:', error.message);
+    console.error('Full error:', error);
     return { success: false, error: error.message };
   }
 };
