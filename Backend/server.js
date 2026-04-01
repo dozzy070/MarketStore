@@ -110,11 +110,6 @@ app.get('/test-email', async (req, res) => {
   }
 });
 
-// Test route
-app.get('/test', (req, res) => {
-  res.json({ message: 'Backend is running!', timestamp: new Date() });
-});
-
 // Health check
 app.get('/health', async (req, res) => {
   try {

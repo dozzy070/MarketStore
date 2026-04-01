@@ -29,7 +29,7 @@ import toast from 'react-hot-toast';
 function CategoryProducts() {
   const { categoryId } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false); // track first fetch
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -67,8 +67,6 @@ function CategoryProducts() {
 
   const fetchCategoryAndProducts = async () => {
     try {
-      setLoading(true);
-      
       // Fetch category details
       const categoryRes = await axios.get(`http://localhost:5000/api/categories/${categoryId}`);
       setCategory(categoryRes.data);
@@ -87,7 +85,7 @@ function CategoryProducts() {
       console.error('Failed to load category products:', error);
       toast.error('Failed to load products');
     } finally {
-      setLoading(false);
+      setHasLoaded(true);
     }
   };
 
@@ -269,17 +267,7 @@ function CategoryProducts() {
     return stars;
   };
 
-  if (loading) {
-    return (
-      <Container className="py-5 text-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-        <p className="mt-3">Loading products...</p>
-      </Container>
-    );
-  }
-
+  // No loading spinner – render immediately
   return (
     <div className="category-products-page">
       {/* Header with breadcrumb */}
@@ -296,9 +284,9 @@ function CategoryProducts() {
             <span className="text-muted">/</span>
             <Link to="/categories" className="text-decoration-none">Categories</Link>
             <span className="text-muted">/</span>
-            <span className="text-primary">{category?.name}</span>
+            <span className="text-primary">{category?.name || 'Category'}</span>
           </div>
-          <h1 className="display-6 fw-bold mb-2">{category?.name}</h1>
+          <h1 className="display-6 fw-bold mb-2">{category?.name || 'Loading...'}</h1>
           <p className="lead text-muted mb-0">{category?.description}</p>
           <p className="text-muted mt-2">{filteredProducts.length} products found</p>
         </Container>
@@ -502,17 +490,30 @@ function CategoryProducts() {
                           type="number"
                           placeholder="Min"
                           size="sm"
+                          value={filters.priceRange.min}
+                          onChange={(e) => setFilters({...filters, priceRange: {...filters.priceRange, min: e.target.value}})}
                         />
                         <Form.Control
                           type="number"
                           placeholder="Max"
                           size="sm"
+                          value={filters.priceRange.max}
+                          onChange={(e) => setFilters({...filters, priceRange: {...filters.priceRange, max: e.target.value}})}
                         />
                       </div>
                       <h6 className="mb-3">Brands</h6>
-                      <Form.Select size="sm" className="mb-3">
-                        <option>All Brands</option>
-                      </Form.Select>
+                      <div className="d-flex flex-column gap-2 mb-3">
+                        {availableBrands.map(brand => (
+                          <Form.Check
+                            key={brand}
+                            type="checkbox"
+                            id={`mobile-brand-${brand}`}
+                            label={brand}
+                            checked={filters.brands.includes(brand)}
+                            onChange={() => handleBrandToggle(brand)}
+                          />
+                        ))}
+                      </div>
                     </Card.Body>
                   </Card>
                 </motion.div>
@@ -520,7 +521,7 @@ function CategoryProducts() {
             </AnimatePresence>
 
             {/* Products Display */}
-            {filteredProducts.length === 0 ? (
+            {hasLoaded && filteredProducts.length === 0 ? (
               <Card className="border-0 shadow-sm text-center py-5">
                 <Card.Body>
                   <h5>No products found</h5>

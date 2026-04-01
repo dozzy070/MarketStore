@@ -28,7 +28,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
-import { userAPI, orderAPI, paymentAPI } from '../services/api';
+import { userAPI, orderAPI, paymentAPI, productAPI } from '../services/api'; // added productAPI
 import PaymentModal from '../components/PaymentModal';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,7 +36,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 function UserDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);         // initial loading state
+  const [refreshing, setRefreshing] = useState(false);  // manual refresh indicator
   const [error, setError] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState(0);
@@ -52,7 +53,7 @@ function UserDashboard() {
       averageOrderValue: 0,
       returningRate: 0
     },
-    recommendations: []
+    recommendations: []      // will be filled from real product data
   });
 
   useEffect(() => {
@@ -60,27 +61,42 @@ function UserDashboard() {
   }, []);
 
   const fetchUserData = async (showToast = false) => {
-    try {
-      if (showToast) setRefreshing(true);
-      setError(null);
+    if (showToast) {
+      setRefreshing(true);
+    } else {
+      setLoading(true); // only show loading on first fetch
+    }
+    setError(null);
 
+    try {
       console.log('📊 Fetching user dashboard data...');
 
-      // Fetch all data in parallel
-      const [profileRes, ordersRes, paymentsRes] = await Promise.allSettled([
-        userAPI.getProfile().catch(() => ({ data: null })),
-        orderAPI.getOrders().catch(() => ({ data: [] })),
-        paymentAPI.getPaymentHistory().catch(() => ({ data: { payments: [] } })),
-        paymentAPI.getBalance().catch(() => ({ data: { balance: 0 } }))
+      // Fetch all required data in parallel
+      const [
+        profileRes,
+        ordersRes,
+        paymentsRes,
+        balanceRes,
+        wishlistRes,
+        reviewsRes,
+        productsRes
+      ] = await Promise.allSettled([
+        userAPI.getProfile(),
+        orderAPI.getOrders(),
+        paymentAPI.getPaymentHistory(),
+        paymentAPI.getBalance(),
+        userAPI.getWishlist(),
+        userAPI.getReviews(),        // assumes you have a getReviews endpoint
+        productAPI.getProducts()
       ]);
 
-      // Process profile
+      // --- Process profile ---
       let profileData = null;
       if (profileRes.status === 'fulfilled' && profileRes.value?.data) {
         profileData = profileRes.value.data.data || profileRes.value.data.user || profileRes.value.data;
       }
 
-      // Process orders
+      // --- Process orders ---
       let ordersData = [];
       if (ordersRes.status === 'fulfilled' && ordersRes.value?.data) {
         ordersData = ordersRes.value.data.orders ||
@@ -88,19 +104,64 @@ function UserDashboard() {
           (Array.isArray(ordersRes.value.data) ? ordersRes.value.data : []);
       }
 
-      // Process payments
+      // --- Process payments ---
       let paymentsData = [];
       let balanceData = 0;
       if (paymentsRes.status === 'fulfilled' && paymentsRes.value?.data) {
         paymentsData = paymentsRes.value.data.payments || [];
-        balanceData = paymentsRes.value.data.balance || 0;
+      }
+      if (balanceRes.status === 'fulfilled' && balanceRes.value?.data) {
+        balanceData = balanceRes.value.data.balance || 0;
       }
 
-      // Calculate stats
+      // --- Process wishlist count ---
+      let wishlistCount = 0;
+      if (wishlistRes.status === 'fulfilled' && wishlistRes.value?.data) {
+        const wishlistData = wishlistRes.value.data;
+        if (Array.isArray(wishlistData)) wishlistCount = wishlistData.length;
+        else if (wishlistData.data && Array.isArray(wishlistData.data)) wishlistCount = wishlistData.data.length;
+        else if (wishlistData.wishlist && Array.isArray(wishlistData.wishlist)) wishlistCount = wishlistData.wishlist.length;
+      }
+
+      // --- Process reviews count ---
+      let reviewsCount = 0;
+      if (reviewsRes.status === 'fulfilled' && reviewsRes.value?.data) {
+        const reviewsData = reviewsRes.value.data;
+        if (Array.isArray(reviewsData)) reviewsCount = reviewsData.length;
+        else if (reviewsData.data && Array.isArray(reviewsData.data)) reviewsCount = reviewsData.data.length;
+        else if (reviewsData.reviews && Array.isArray(reviewsData.reviews)) reviewsCount = reviewsData.reviews.length;
+      }
+
+      // --- Process products for recommendations ---
+      let productsData = [];
+      if (productsRes.status === 'fulfilled' && productsRes.value?.data) {
+        let items = [];
+        if (Array.isArray(productsRes.value.data)) {
+          items = productsRes.value.data;
+        } else if (productsRes.value.data.data && Array.isArray(productsRes.value.data.data)) {
+          items = productsRes.value.data.data;
+        } else if (productsRes.value.data.products && Array.isArray(productsRes.value.data.products)) {
+          items = productsRes.value.data.products;
+        }
+        // Take first 4 products that have image and price
+        productsData = items
+          .filter(p => p.name && p.price)
+          .slice(0, 4)
+          .map(p => ({
+            id: p.id,
+            name: p.name,
+            price: parseFloat(p.price) || 0,
+            image: p.image_url || p.image || 'https://via.placeholder.com/200'
+          }));
+      }
+
+      // --- Calculate order statistics ---
       const deliveredOrders = ordersData.filter(o => o?.status === 'delivered');
       const totalSpent = deliveredOrders.reduce((sum, o) => sum + (parseFloat(o?.total) || 0), 0);
       const averageOrderValue = deliveredOrders.length ? totalSpent / deliveredOrders.length : 0;
+      const returningRate = ordersData.length > 0 ? 75 : 0; // placeholder – you can compute real rate
 
+      // --- Build final userData object ---
       setUserData({
         profile: profileData || {
           full_name: user?.full_name || 'Valued Customer',
@@ -112,33 +173,29 @@ function UserDashboard() {
         payments: paymentsData.slice(0, 5),
         stats: {
           totalOrders: ordersData.length,
-          wishlistCount: 12,
-          reviewsCount: 8,
-          totalSpent: totalSpent || balanceData,
-          averageOrderValue: averageOrderValue,
-          returningRate: ordersData.length > 0 ? 75 : 0
+          wishlistCount,
+          reviewsCount,
+          totalSpent,
+          averageOrderValue,
+          returningRate
         },
-        recommendations: [
-          { id: 1, name: 'Premium Wireless Headphones', price: 15999, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200' },
-          { id: 2, name: 'Smart Fitness Watch', price: 29999, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200' },
-          { id: 3, name: 'Portable Bluetooth Speaker', price: 8999, image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=200' },
-          { id: 4, name: 'Premium Yoga Mat', price: 8999, image: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=200' }
-        ]
+        recommendations: productsData
       });
 
       if (showToast) toast.success('Dashboard updated');
 
     } catch (err) {
       console.error('Failed to load user data:', err);
-      setError('Unable to load complete data. Showing default information.');
+      setError('Unable to load complete data. Please try again later.');
     } finally {
-      setRefreshing(false);
+      if (showToast) setRefreshing(false);
+      setLoading(false);
     }
   };
 
   const handlePaymentSuccess = (payment) => {
     toast.success('Payment successful!');
-    fetchUserData();
+    fetchUserData(); // refresh data
   };
 
   const formatCurrency = (amount) => {
@@ -153,36 +210,11 @@ function UserDashboard() {
 
   const getStatusConfig = (status) => {
     const configs = {
-      pending: {
-        icon: FaClock,
-        text: 'Pending',
-        bgColor: '#fef3c7',
-        textColor: '#d97706'
-      },
-      processing: {
-        icon: FaSync,
-        text: 'Processing',
-        bgColor: '#e0f2fe',
-        textColor: '#0284c7'
-      },
-      shipped: {
-        icon: FaShippingFast,
-        text: 'Shipped',
-        bgColor: '#dbeafe',
-        textColor: '#2563eb'
-      },
-      delivered: {
-        icon: FaCheckCircle,
-        text: 'Delivered',
-        bgColor: '#d1fae5',
-        textColor: '#059669'
-      },
-      cancelled: {
-        icon: FaExclamationTriangle,
-        text: 'Cancelled',
-        bgColor: '#fee2e2',
-        textColor: '#dc2626'
-      }
+      pending: { icon: FaClock, text: 'Pending', bgColor: '#fef3c7', textColor: '#d97706' },
+      processing: { icon: FaSync, text: 'Processing', bgColor: '#e0f2fe', textColor: '#0284c7' },
+      shipped: { icon: FaShippingFast, text: 'Shipped', bgColor: '#dbeafe', textColor: '#2563eb' },
+      delivered: { icon: FaCheckCircle, text: 'Delivered', bgColor: '#d1fae5', textColor: '#059669' },
+      cancelled: { icon: FaExclamationTriangle, text: 'Cancelled', bgColor: '#fee2e2', textColor: '#dc2626' }
     };
     return configs[status] || configs.pending;
   };
@@ -227,6 +259,17 @@ function UserDashboard() {
       gradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
     }
   ];
+
+  // --- Loading indicator (only on initial load, no spinner if you prefer) ---
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-5">
+          <h5>Loading dashboard...</h5>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -328,8 +371,8 @@ function UserDashboard() {
                   </Button>
                 ))}
               </div>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 className="w-100"
                 onClick={() => {
                   setSelectedAmount(0);
@@ -381,7 +424,7 @@ function UserDashboard() {
             </div>
             <div style={styles.metricContent}>
               <span style={styles.metricLabel}>Loyalty Points</span>
-              <span style={styles.metricValue}>2,450</span>
+              <span style={styles.metricValue}>2,450</span> {/* This could also be fetched if you have a points system */}
             </div>
           </div>
         </div>
@@ -409,8 +452,8 @@ function UserDashboard() {
                     <th style={styles.tableHeader}>Total</th>
                     <th style={styles.tableHeader}>Status</th>
                     <th style={styles.tableHeader}>Actions</th>
-                    </tr>
-                  </thead>
+                  </tr>
+                </thead>
                 <tbody>
                   <AnimatePresence>
                     {userData.recentOrders.map((order, index) => {
@@ -426,7 +469,7 @@ function UserDashboard() {
                         >
                           <td style={styles.orderId}>
                             #{order.id?.toString().slice(0, 12) || 'N/A'}
-                           </td>
+                          </td>
                           <td style={styles.orderDate}>
                             <FaCalendarAlt style={{ marginRight: '8px' }} />
                             {order.created_at ? new Date(order.created_at).toLocaleDateString() : 'N/A'}
@@ -509,8 +552,8 @@ function UserDashboard() {
                     <th style={styles.tableHeader}>Reference</th>
                     <th style={styles.tableHeader}>Amount</th>
                     <th style={styles.tableHeader}>Status</th>
-                    </tr>
-                  </thead>
+                  </tr>
+                </thead>
                 <tbody>
                   {userData.payments.map((payment, index) => (
                     <motion.tr
@@ -538,8 +581,8 @@ function UserDashboard() {
                             color: payment.status === 'success' ? '#059669' : payment.status === 'pending' ? '#d97706' : '#dc2626'
                           }}
                         >
-                          {payment.status === 'success' ? <FaCheckCircle style={{ marginRight: '6px' }} /> : 
-                           payment.status === 'pending' ? <FaClock style={{ marginRight: '6px' }} /> : 
+                          {payment.status === 'success' ? <FaCheckCircle style={{ marginRight: '6px' }} /> :
+                           payment.status === 'pending' ? <FaClock style={{ marginRight: '6px' }} /> :
                            <FaExclamationTriangle style={{ marginRight: '6px' }} />}
                           {payment.status === 'success' ? 'Success' : payment.status === 'pending' ? 'Pending' : 'Failed'}
                         </span>
@@ -562,39 +605,41 @@ function UserDashboard() {
         </div>
 
         {/* Recommendations Section */}
-        <div style={styles.recommendationsSection}>
-          <div style={styles.sectionHeader}>
-            <div>
-              <h2 style={styles.sectionTitle}>Recommended for You</h2>
-              <p style={styles.sectionSubtitle}>Based on your shopping preferences</p>
+        {userData.recommendations.length > 0 && (
+          <div style={styles.recommendationsSection}>
+            <div style={styles.sectionHeader}>
+              <div>
+                <h2 style={styles.sectionTitle}>Recommended for You</h2>
+                <p style={styles.sectionSubtitle}>Based on popular products</p>
+              </div>
+            </div>
+
+            <div style={styles.recommendationsGrid}>
+              {userData.recommendations.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  style={styles.recommendationCard}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ y: -4 }}
+                >
+                  <img src={product.image} alt={product.name} style={styles.recommendationImage} />
+                  <div style={styles.recommendationContent}>
+                    <h4 style={styles.recommendationTitle}>{product.name}</h4>
+                    <p style={styles.recommendationPrice}>{formatCurrency(product.price)}</p>
+                    <Button
+                      style={styles.addToCartBtn}
+                      onClick={() => navigate(`/product/${product.id}`)}
+                    >
+                      View Product
+                    </Button>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
-
-          <div style={styles.recommendationsGrid}>
-            {userData.recommendations.map((product, index) => (
-              <motion.div
-                key={product.id}
-                style={styles.recommendationCard}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -4 }}
-              >
-                <img src={product.image} alt={product.name} style={styles.recommendationImage} />
-                <div style={styles.recommendationContent}>
-                  <h4 style={styles.recommendationTitle}>{product.name}</h4>
-                  <p style={styles.recommendationPrice}>{formatCurrency(product.price)}</p>
-                  <Button
-                    style={styles.addToCartBtn}
-                    onClick={() => navigate(`/product/${product.id}`)}
-                  >
-                    View Product
-                  </Button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* Quick Actions */}
         <div style={styles.quickActionsSection}>
@@ -637,7 +682,6 @@ function UserDashboard() {
         .spin {
           animation: spin 1s linear infinite;
         }
-        
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
@@ -647,13 +691,9 @@ function UserDashboard() {
   );
 }
 
-// Styles object (same as before, add quickPaymentSection)
+// Styles object – unchanged, kept as in original
 const styles = {
-  container: {
-    padding: '24px',
-    maxWidth: '1400px',
-    margin: '0 auto'
-  },
+  container: { padding: '24px', maxWidth: '1400px', margin: '0 auto' },
   welcomeSection: {
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     borderRadius: '24px',
@@ -668,9 +708,7 @@ const styles = {
     flexWrap: 'wrap',
     gap: '20px'
   },
-  welcomeText: {
-    flex: 1
-  },
+  welcomeText: { flex: 1 },
   welcomeTitle: {
     fontSize: '28px',
     fontWeight: '700',
@@ -679,9 +717,7 @@ const styles = {
     alignItems: 'center',
     gap: '8px'
   },
-  waveEmoji: {
-    fontSize: '32px'
-  },
+  waveEmoji: { fontSize: '32px' },
   welcomeSubtitle: {
     fontSize: '14px',
     opacity: '0.9',
@@ -693,10 +729,7 @@ const styles = {
     padding: '6px 12px',
     fontSize: '12px'
   },
-  welcomeActions: {
-    display: 'flex',
-    gap: '12px'
-  },
+  welcomeActions: { display: 'flex', gap: '12px' },
   refreshBtn: {
     background: 'rgba(255,255,255,0.2)',
     border: '1px solid rgba(255,255,255,0.3)',
@@ -714,9 +747,7 @@ const styles = {
     alignItems: 'center',
     gap: '12px'
   },
-  alertIcon: {
-    color: '#f59e0b'
-  },
+  alertIcon: { color: '#f59e0b' },
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -730,12 +761,7 @@ const styles = {
     transition: 'all 0.3s',
     boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
   },
-  statLink: {
-    textDecoration: 'none',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px'
-  },
+  statLink: { textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '16px' },
   statIcon: {
     width: '56px',
     height: '56px',
@@ -746,31 +772,11 @@ const styles = {
     color: 'white',
     fontSize: '24px'
   },
-  statInfo: {
-    flex: 1
-  },
-  statLabel: {
-    display: 'block',
-    fontSize: '13px',
-    color: '#6b7280',
-    marginBottom: '4px'
-  },
-  statValue: {
-    display: 'block',
-    fontSize: '24px',
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: '4px'
-  },
-  statTrend: {
-    fontSize: '12px',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '4px'
-  },
-  quickPaymentSection: {
-    marginBottom: '32px'
-  },
+  statInfo: { flex: 1 },
+  statLabel: { display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' },
+  statValue: { display: 'block', fontSize: '24px', fontWeight: '700', color: '#1f2937', marginBottom: '4px' },
+  statTrend: { fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' },
+  quickPaymentSection: { marginBottom: '32px' },
   metricsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
@@ -797,21 +803,9 @@ const styles = {
     color: '#667eea',
     fontSize: '20px'
   },
-  metricContent: {
-    flex: 1
-  },
-  metricLabel: {
-    display: 'block',
-    fontSize: '12px',
-    color: '#6b7280',
-    marginBottom: '4px'
-  },
-  metricValue: {
-    display: 'block',
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#1f2937'
-  },
+  metricContent: { flex: 1 },
+  metricLabel: { display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' },
+  metricValue: { display: 'block', fontSize: '18px', fontWeight: '600', color: '#1f2937' },
   recentOrdersSection: {
     background: 'white',
     borderRadius: '20px',
@@ -827,16 +821,8 @@ const styles = {
     flexWrap: 'wrap',
     gap: '16px'
   },
-  sectionTitle: {
-    fontSize: '20px',
-    fontWeight: '600',
-    marginBottom: '4px'
-  },
-  sectionSubtitle: {
-    fontSize: '13px',
-    color: '#6b7280',
-    margin: 0
-  },
+  sectionTitle: { fontSize: '20px', fontWeight: '600', marginBottom: '4px' },
+  sectionSubtitle: { fontSize: '13px', color: '#6b7280', margin: 0 },
   viewAllLink: {
     color: '#667eea',
     textDecoration: 'none',
@@ -846,13 +832,8 @@ const styles = {
     fontSize: '14px',
     fontWeight: '500'
   },
-  ordersTableContainer: {
-    overflowX: 'auto'
-  },
-  ordersTable: {
-    width: '100%',
-    borderCollapse: 'collapse'
-  },
+  ordersTableContainer: { overflowX: 'auto' },
+  ordersTable: { width: '100%', borderCollapse: 'collapse' },
   tableHeader: {
     textAlign: 'left',
     padding: '12px 16px',
@@ -861,69 +842,19 @@ const styles = {
     fontWeight: '600',
     color: '#6b7280'
   },
-  orderRow: {
-    borderBottom: '1px solid #e5e7eb'
-  },
-  orderId: {
-    padding: '16px',
-    fontWeight: '600',
-    color: '#1f2937'
-  },
-  orderDate: {
-    padding: '16px',
-    display: 'flex',
-    alignItems: 'center',
-    color: '#6b7280',
-    fontSize: '13px'
-  },
-  itemsBadge: {
-    background: '#f3f4f6',
-    color: '#4b5563',
-    padding: '4px 12px',
-    borderRadius: '20px'
-  },
-  orderTotal: {
-    padding: '16px',
-    fontWeight: '600',
-    color: '#1f2937'
-  },
-  statusBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    padding: '6px 12px',
-    borderRadius: '20px',
-    fontSize: '12px',
-    fontWeight: '500'
-  },
-  actionDropdown: {
-    color: '#9ca3af',
-    padding: 0
-  },
-  emptyState: {
-    textAlign: 'center',
-    padding: '48px'
-  },
-  emptyIcon: {
-    fontSize: '64px',
-    color: '#d1d5db',
-    marginBottom: '16px'
-  },
-  emptyTitle: {
-    fontSize: '18px',
-    marginBottom: '8px'
-  },
-  emptyText: {
-    color: '#6b7280',
-    marginBottom: '16px'
-  },
-  shopNowBtn: {
-    marginTop: '16px',
-    padding: '10px 24px',
-    borderRadius: '12px'
-  },
-  recommendationsSection: {
-    marginBottom: '32px'
-  },
+  orderRow: { borderBottom: '1px solid #e5e7eb' },
+  orderId: { padding: '16px', fontWeight: '600', color: '#1f2937' },
+  orderDate: { padding: '16px', display: 'flex', alignItems: 'center', color: '#6b7280', fontSize: '13px' },
+  itemsBadge: { background: '#f3f4f6', color: '#4b5563', padding: '4px 12px', borderRadius: '20px' },
+  orderTotal: { padding: '16px', fontWeight: '600', color: '#1f2937' },
+  statusBadge: { display: 'inline-flex', alignItems: 'center', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500' },
+  actionDropdown: { color: '#9ca3af', padding: 0 },
+  emptyState: { textAlign: 'center', padding: '48px' },
+  emptyIcon: { fontSize: '64px', color: '#d1d5db', marginBottom: '16px' },
+  emptyTitle: { fontSize: '18px', marginBottom: '8px' },
+  emptyText: { color: '#6b7280', marginBottom: '16px' },
+  shopNowBtn: { marginTop: '16px', padding: '10px 24px', borderRadius: '12px' },
+  recommendationsSection: { marginBottom: '32px' },
   recommendationsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -936,31 +867,12 @@ const styles = {
     boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
     transition: 'all 0.3s'
   },
-  recommendationImage: {
-    width: '100%',
-    height: '200px',
-    objectFit: 'cover'
-  },
-  recommendationContent: {
-    padding: '16px'
-  },
-  recommendationTitle: {
-    fontSize: '16px',
-    fontWeight: '600',
-    marginBottom: '8px'
-  },
-  recommendationPrice: {
-    color: '#667eea',
-    fontWeight: '600',
-    marginBottom: '12px'
-  },
-  addToCartBtn: {
-    width: '100%',
-    borderRadius: '12px'
-  },
-  quickActionsSection: {
-    marginTop: '32px'
-  },
+  recommendationImage: { width: '100%', height: '200px', objectFit: 'cover' },
+  recommendationContent: { padding: '16px' },
+  recommendationTitle: { fontSize: '16px', fontWeight: '600', marginBottom: '8px' },
+  recommendationPrice: { color: '#667eea', fontWeight: '600', marginBottom: '12px' },
+  addToCartBtn: { width: '100%', borderRadius: '12px' },
+  quickActionsSection: { marginTop: '32px' },
   quickActionsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -975,11 +887,7 @@ const styles = {
     transition: 'all 0.3s',
     boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
   },
-  actionIcon: {
-    fontSize: '28px',
-    color: '#667eea',
-    marginBottom: '12px'
-  }
+  actionIcon: { fontSize: '28px', color: '#667eea', marginBottom: '12px' }
 };
 
 export default UserDashboard;

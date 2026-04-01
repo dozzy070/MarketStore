@@ -370,71 +370,73 @@ function HelpCenter() {
         </Modal.Body>
       </Modal>
 
-      <style jsx>{`
-        .help-card, .support-card {
-          transition: all 0.3s ease;
-          cursor: pointer;
-        }
-        
-        .help-card:hover, .support-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 28px rgba(0,0,0,0.1) !important;
-        }
-        
-        .chat-modal .modal-content {
-          border-radius: 16px;
-          overflow: hidden;
-        }
-        
-        .message-bubble {
-          word-break: break-word;
-          animation: fadeIn 0.3s ease;
-        }
-        
-        .typing-indicator {
-          display: flex;
-          gap: 4px;
-          padding: 4px 0;
-        }
-        
-        .typing-indicator span {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background-color: #6c757d;
-          animation: typing 1.4s infinite ease-in-out;
-        }
-        
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-        
-        @keyframes typing {
-          0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-          40% { transform: scale(1); opacity: 1; }
-        }
-        
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @media (max-width: 768px) {
-          .message-bubble {
-            max-width: 90% !important;
+      <style>
+        {`
+          .help-card, .support-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
           }
           
-          .quick-replies .btn {
-            font-size: 12px;
-            padding: 4px 8px;
+          .help-card:hover, .support-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.1) !important;
           }
-        }
-      `}</style>
+          
+          .chat-modal .modal-content {
+            border-radius: 16px;
+            overflow: hidden;
+          }
+          
+          .message-bubble {
+            word-break: break-word;
+            animation: fadeIn 0.3s ease;
+          }
+          
+          .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 4px 0;
+          }
+          
+          .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #6c757d;
+            animation: typing 1.4s infinite ease-in-out;
+          }
+          
+          .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+          .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+          
+          @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+          }
+          
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          @media (max-width: 768px) {
+            .message-bubble {
+              max-width: 90% !important;
+            }
+            
+            .quick-replies .btn {
+              font-size: 12px;
+              padding: 4px 8px;
+            }
+          }
+        `}
+      </style>
     </DashboardLayout>
   );
 }

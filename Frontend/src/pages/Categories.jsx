@@ -9,7 +9,7 @@ function Categories() {
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false); // track first fetch completion
 
   useEffect(() => {
     fetchCategories();
@@ -35,7 +35,7 @@ function Categories() {
     } catch (error) {
       console.error('Failed to load categories:', error);
     } finally {
-      setLoading(false);
+      setHasLoaded(true);
     }
   };
 
@@ -99,8 +99,8 @@ function Categories() {
           ))}
         </Row>
 
-        {/* No Results */}
-        {filteredCategories.length === 0 && !loading && (
+        {/* No Results – only shown after first fetch completed and no categories */}
+        {hasLoaded && filteredCategories.length === 0 && (
           <div className="text-center py-5">
             <h5>No categories found</h5>
             <p className="text-muted">Try a different search term</p>

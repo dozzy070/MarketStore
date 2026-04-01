@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Form, Button, Badge, Image, Spinner } from 'react-bootstrap';
+import { Row, Col, Card, Form, Button, Badge, Image } from 'react-bootstrap';
 import { 
   FaUser, 
-  FaEnvelope, 
   FaPhone, 
   FaMapMarkerAlt, 
   FaEdit, 
   FaSave, 
   FaTimes,
   FaCheckCircle,
-  FaCalendar,
-  FaShieldAlt
+  FaCalendar
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
@@ -22,15 +20,16 @@ function AdminProfile() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   
+  // Initial profile – start with auth context data (no mock)
   const [profile, setProfile] = useState({
-    full_name: user?.full_name || 'Admin User',
-    email: user?.email || 'admin@marketstore.com',
-    phone: user?.phone || '+234 801 234 5678',
-    location: user?.location || 'Lagos, Nigeria',
+    full_name: user?.full_name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    location: user?.location || '',
     avatar: '',
-    bio: 'System administrator for MarketStore platform.',
+    bio: '',
     joined: user?.created_at || new Date().toISOString(),
-    verified: true
+    verified: user?.verified || false
   });
 
   const [formData, setFormData] = useState({
@@ -39,6 +38,38 @@ function AdminProfile() {
     location: profile.location,
     bio: profile.bio
   });
+
+  // Fetch real profile data from API (no loading indicator)
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await userAPI.getProfile();
+        if (response.data) {
+          const data = response.data.data || response.data.user || response.data;
+          setProfile({
+            full_name: data.full_name || user?.full_name || '',
+            email: data.email || user?.email || '',
+            phone: data.phone || data.phone_number || user?.phone || '',
+            location: data.location || user?.location || '',
+            avatar: data.avatar || '',
+            bio: data.bio || '',
+            joined: data.created_at || user?.created_at || new Date().toISOString(),
+            verified: data.verified || user?.verified || false
+          });
+          setFormData({
+            full_name: data.full_name || user?.full_name || '',
+            phone: data.phone || data.phone_number || user?.phone || '',
+            location: data.location || user?.location || '',
+            bio: data.bio || ''
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+        // Keep using auth context data – no toast on initial load to avoid spam
+      }
+    };
+    fetchProfile();
+  }, [user]);
 
   const handleChange = (e) => {
     setFormData({
@@ -52,13 +83,12 @@ function AdminProfile() {
     setSaving(true);
     try {
       await userAPI.updateProfile(formData);
-      setProfile({ ...profile, ...formData });
+      setProfile(prev => ({ ...prev, ...formData }));
       setEditing(false);
       toast.success('Profile updated successfully');
     } catch (error) {
-      setProfile({ ...profile, ...formData });
-      setEditing(false);
-      toast.success('Profile updated (demo mode)');
+      console.error('Failed to update profile:', error);
+      toast.error('Failed to update profile');
     } finally {
       setSaving(false);
     }
@@ -79,9 +109,11 @@ function AdminProfile() {
                     <FaUser size={50} className="text-primary" />
                   )}
                 </div>
-                <div className="position-absolute bottom-0 end-0 bg-success rounded-circle p-1">
-                  <FaCheckCircle className="text-white" size={16} />
-                </div>
+                {profile.verified && (
+                  <div className="position-absolute bottom-0 end-0 bg-success rounded-circle p-1">
+                    <FaCheckCircle className="text-white" size={16} />
+                  </div>
+                )}
               </div>
               
               <h4>{profile.full_name}</h4>
@@ -89,6 +121,7 @@ function AdminProfile() {
               
               <div className="mb-3">
                 <Badge bg="danger">Administrator</Badge>
+                {profile.verified && <Badge bg="success" className="ms-2">Verified</Badge>}
               </div>
 
               <hr />
@@ -96,11 +129,11 @@ function AdminProfile() {
               <div className="text-start">
                 <p className="mb-2">
                   <FaPhone className="text-primary me-2" />
-                  {profile.phone}
+                  {profile.phone || 'Not provided'}
                 </p>
                 <p className="mb-2">
                   <FaMapMarkerAlt className="text-primary me-2" />
-                  {profile.location}
+                  {profile.location || 'Not provided'}
                 </p>
                 <p className="mb-0">
                   <FaCalendar className="text-primary me-2" />
@@ -187,6 +220,7 @@ function AdminProfile() {
                       name="bio"
                       value={formData.bio}
                       onChange={handleChange}
+                      placeholder="Tell us about yourself..."
                     />
                   </Form.Group>
                 </Form>
@@ -202,13 +236,13 @@ function AdminProfile() {
                   </Row>
                   <Row>
                     <Col md={6}>
-                      <p><strong>Phone:</strong><br />{profile.phone}</p>
+                      <p><strong>Phone:</strong><br />{profile.phone || 'Not provided'}</p>
                     </Col>
                     <Col md={6}>
-                      <p><strong>Location:</strong><br />{profile.location}</p>
+                      <p><strong>Location:</strong><br />{profile.location || 'Not provided'}</p>
                     </Col>
                   </Row>
-                  <p><strong>Bio:</strong><br />{profile.bio}</p>
+                  <p><strong>Bio:</strong><br />{profile.bio || 'No bio added yet.'}</p>
                 </>
               )}
             </Card.Body>

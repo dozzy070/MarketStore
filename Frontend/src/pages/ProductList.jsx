@@ -1,71 +1,43 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Button, Badge, Form, InputGroup } from 'react-bootstrap';
-import { FaHeart, FaShoppingCart, FaTrash, FaSearch, FaSync } from 'react-icons/fa';
+import { FaSearch, FaShoppingCart, FaHeart } from 'react-icons/fa';
 import DashboardLayout from '../components/DashboardLayout';
+import { productAPI } from '../services/api';
 import { userAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { Link } from 'react-router-dom';
 
-function UserWishlist() {
-  const [wishlist, setWishlist] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
+function ProductList() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true); // track loading state
   const [search, setSearch] = useState('');
 
-  // Fetch wishlist silently (no spinner)
-  const fetchWishlist = useCallback(async (showRefresh = false) => {
-    if (showRefresh) setRefreshing(true);
-    try {
-      const response = await userAPI.getWishlist();
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await productAPI.getProducts();
       let items = [];
       if (response.data) {
         if (Array.isArray(response.data)) {
           items = response.data;
         } else if (response.data.data && Array.isArray(response.data.data)) {
           items = response.data.data;
-        } else if (response.data.wishlist && Array.isArray(response.data.wishlist)) {
-          items = response.data.wishlist;
+        } else if (response.data.products && Array.isArray(response.data.products)) {
+          items = response.data.products;
         }
       }
-      setWishlist(items);
+      setProducts(items);
     } catch (error) {
-      console.error('Failed to load wishlist:', error);
-      toast.error('Failed to load wishlist');
+      console.error('Failed to load products:', error);
+      toast.error('Failed to load products');
     } finally {
-      if (showRefresh) setRefreshing(false);
-    }
-  }, []);
-
-  // Initial load (no spinner)
-  useEffect(() => {
-    fetchWishlist();
-
-    // Real‑time sync when tab becomes visible
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchWishlist(); // silent refresh
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [fetchWishlist]);
-
-  // Remove item with optimistic update
-  const handleRemove = async (productId) => {
-    const originalWishlist = [...wishlist];
-    setWishlist(wishlist.filter(item => item.id !== productId));
-
-    try {
-      await userAPI.removeFromWishlist(productId);
-      toast.success('Removed from wishlist');
-    } catch (error) {
-      console.error('Failed to remove item:', error);
-      toast.error('Failed to remove item');
-      setWishlist(originalWishlist);
+      setLoading(false);
     }
   };
 
-  // Add to cart
   const handleAddToCart = (product) => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     const existing = cart.find(item => item.id === product.id);
@@ -78,40 +50,45 @@ function UserWishlist() {
     toast.success(`${product.name} added to cart!`);
   };
 
-  // Manual refresh (spinner only on the button)
-  const handleRefresh = () => {
-    fetchWishlist(true);
+  const handleAddToWishlist = async (product) => {
+    try {
+      await userAPI.addToWishlist(product.id);
+      toast.success(`${product.name} added to wishlist!`);
+    } catch (error) {
+      console.error('Failed to add to wishlist:', error);
+      toast.error('Could not add to wishlist');
+    }
   };
 
-  const filteredWishlist = wishlist.filter(item =>
-    item.name?.toLowerCase().includes(search.toLowerCase())
+  const filteredProducts = products.filter(product =>
+    product.name?.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-5">
+          <h5>Loading products...</h5>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h4 className="mb-1">My Wishlist</h4>
-          <p className="text-muted mb-0">{wishlist.length} items saved</p>
+          <h4 className="mb-1">Browse Products</h4>
+          <p className="text-muted mb-0">{products.length} products available</p>
         </div>
-        <Button
-          variant="outline-secondary"
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="d-flex align-items-center gap-2"
-        >
-          <FaSync className={refreshing ? 'fa-spin' : ''} />
-          Refresh
-        </Button>
       </div>
 
-      {/* Search Bar */}
       <Card className="border-0 shadow-sm mb-4">
         <Card.Body>
           <InputGroup>
             <InputGroup.Text><FaSearch /></InputGroup.Text>
             <Form.Control
-              placeholder="Search in wishlist..."
+              placeholder="Search products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -119,20 +96,17 @@ function UserWishlist() {
         </Card.Body>
       </Card>
 
-      {filteredWishlist.length === 0 ? (
+      {filteredProducts.length === 0 ? (
         <Card className="border-0 shadow-sm text-center py-5">
           <Card.Body>
-            <FaHeart size={60} className="text-muted mb-3" />
-            <h5>Your wishlist is empty</h5>
-            <p className="text-muted mb-4">Save items you love to your wishlist</p>
-            <Button variant="primary" as={Link} to="/products">
-              Browse Products
-            </Button>
+            <FaSearch size={60} className="text-muted mb-3" />
+            <h5>No products found</h5>
+            <p className="text-muted">Try a different search term</p>
           </Card.Body>
         </Card>
       ) : (
         <Row className="g-4">
-          {filteredWishlist.map(product => (
+          {filteredProducts.map(product => (
             <Col key={product.id} md={4}>
               <Card className="border-0 shadow-sm h-100">
                 <div className="position-relative">
@@ -145,9 +119,9 @@ function UserWishlist() {
                   <Button
                     variant="link"
                     className="position-absolute top-0 end-0 m-2 bg-white rounded-circle p-2"
-                    onClick={() => handleRemove(product.id)}
+                    onClick={() => handleAddToWishlist(product)}
                   >
-                    <FaTrash className="text-danger" />
+                    <FaHeart className="text-danger" />
                   </Button>
                 </div>
                 <Card.Body>
@@ -169,16 +143,14 @@ function UserWishlist() {
                       {product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
                     </Badge>
                   </div>
-                  <div className="d-flex gap-2">
-                    <Button
-                      variant="primary"
-                      className="flex-grow-1"
-                      onClick={() => handleAddToCart(product)}
-                      disabled={product.stock_quantity <= 0}
-                    >
-                      <FaShoppingCart className="me-2" /> Add to Cart
-                    </Button>
-                  </div>
+                  <Button
+                    variant="primary"
+                    className="w-100"
+                    onClick={() => handleAddToCart(product)}
+                    disabled={product.stock_quantity <= 0}
+                  >
+                    <FaShoppingCart className="me-2" /> Add to Cart
+                  </Button>
                 </Card.Body>
               </Card>
             </Col>
@@ -189,4 +161,4 @@ function UserWishlist() {
   );
 }
 
-export default UserWishlist;
+export default ProductList;

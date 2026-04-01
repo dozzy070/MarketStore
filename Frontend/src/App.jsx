@@ -56,6 +56,8 @@ import PaymentsHelp from './pages/help/PaymentsHelp';
 import VendorHelp from './pages/help/VendorHelp';
 import Policies from './pages/help/Policies';
 import UserPayments from './pages/UserPayments';
+import ProductList from './pages/ProductList';
+
 
 // ==================== VENDOR ROUTES ====================
 import VendorDashboard from './pages/VendorDashboard';
@@ -216,6 +218,9 @@ function App() {
           <PrivateRoute><RoleRoute allowedRoles={['user', 'vendor', 'admin']}><Checkout /></RoleRoute></PrivateRoute>
         } />
         <Route path="/user/payments" element={<DashboardLayout><UserPayments /></DashboardLayout>} />
+        
+        <Route path="/products" element={<ProductList />} />
+
 
         {/* ========== VENDOR ROUTES ========== */}
         <Route path="/vendor/dashboard" element={

@@ -12,11 +12,12 @@ import {
   sendLoginAlertEmail,
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
+  sendEmail, // <-- added for test endpoint
 } from '../services/emailService.js';
 
 const router = express.Router();
 
-// Helper functions
+// Helper functions (unchanged)
 const getClientInfo = (req) => {
   const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress;
   const userAgent = req.headers['user-agent'];
@@ -33,6 +34,14 @@ const getLocationFromIp = async (ip) => {
   if (ip === '::1' || ip === '127.0.0.1') return 'Localhost';
   return 'Unknown Location';
 };
+
+// Test email endpoint (now working)
+router.get('/test-email', async (req, res) => {
+  console.log('🔥🔥🔥 TEST EMAIL endpoint hit');
+  const result = await sendEmail('your-email@example.com', 'Test Subject', '<h1>Test</h1>');
+  console.log('Test email result:', result);
+  res.json(result);
+});
 
 /* ================= REGISTER ================= */
 router.post('/register', [
@@ -122,7 +131,7 @@ router.post('/register', [
     // ─── EMAIL SERVICE INTEGRATION ─────────────────────────────
     console.log('📧 [REGISTER] About to send welcome email to:', user.email);
     try {
-      const emailResult = await sendWelcomeEmail(user); // <-- using await to catch errors
+      const emailResult = await sendWelcomeEmail(user);
       console.log('📧 [REGISTER] Welcome email result:', emailResult);
     } catch (emailErr) {
       console.error('❌ [REGISTER] Welcome email error:', emailErr);

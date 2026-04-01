@@ -16,10 +16,11 @@ import toast from 'react-hot-toast';
 
 function AdminCategories() {
   const [categories, setCategories] = useState([]);
+  const [hasLoaded, setHasLoaded] = useState(false); // track first fetch completion
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // only for refresh button disabled state
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -54,11 +55,11 @@ function AdminCategories() {
         }
       } catch (apiError) {
         console.error('API error:', apiError);
-        // Don't use mock data - just set empty array
-        categoriesData = [];
+        categoriesData = []; // no fallback mock data
       }
       
       setCategories(categoriesData);
+      setHasLoaded(true);
       
       if (showToast) {
         if (categoriesData.length === 0) {
@@ -73,8 +74,9 @@ function AdminCategories() {
       setError('Failed to load categories. Please try again.');
       if (showToast) toast.error('Failed to load categories');
       setCategories([]);
+      setHasLoaded(true);
     } finally {
-      setRefreshing(false);
+      if (showToast) setRefreshing(false);
     }
   };
 
@@ -135,8 +137,9 @@ function AdminCategories() {
             variant="outline-primary" 
             onClick={() => fetchCategories(true)}
             disabled={refreshing}
+            className="d-flex align-items-center gap-2"
           >
-            <FaSync className={`me-2 ${refreshing ? 'spin' : ''}`} />
+            <FaSync />
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
           <Button variant="primary" onClick={() => {
@@ -156,7 +159,7 @@ function AdminCategories() {
       )}
 
       <Row className="g-4">
-        {categories.length === 0 ? (
+        {hasLoaded && categories.length === 0 ? (
           <Col md={12}>
             <Card className="border-0 shadow-sm text-center py-5">
               <Card.Body>
@@ -310,15 +313,6 @@ function AdminCategories() {
         .category-card:hover {
           transform: translateY(-4px);
           box-shadow: 0 12px 28px rgba(0,0,0,0.1) !important;
-        }
-        
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
         }
       `}</style>
     </DashboardLayout>

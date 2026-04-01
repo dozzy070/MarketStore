@@ -1,4 +1,4 @@
-// frontend/src/pages/AdminDashboard.jsx - No Static Badges
+// frontend/src/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Button, Badge, Table } from 'react-bootstrap';
 import { 
@@ -40,7 +40,7 @@ ChartJS.register(
 
 function AdminDashboard() {
   const navigate = useNavigate();
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // only for manual refresh button (disabled state)
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalVendors: 0,
@@ -58,26 +58,30 @@ function AdminDashboard() {
   const [pendingVendors, setPendingVendors] = useState([]);
   const [pendingProducts, setPendingProducts] = useState([]);
   const [pendingReviews, setPendingReviews] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [revenueData, setRevenueData] = useState({ labels: [], values: [] });
 
-  const totalPending = stats.pendingVendors + stats.pendingProducts + stats.pendingReviews;
-
-  // Trigger real-time update for sidebar and notification bell
   const triggerRealTimeUpdate = () => {
     window.dispatchEvent(new CustomEvent('pendingCountsUpdated'));
     localStorage.setItem('pending_counts_updated', Date.now().toString());
   };
 
-  // Fetch all admin data
-  const fetchAdminData = async (showToast = false) => {
+  // Fetch admin data
+  // @param showToast - whether to show success/error toast
+  // @param silent - if true, do not show refresh button spinner
+  const fetchAdminData = async (showToast = false, silent = false) => {
     if (showToast) setRefreshing(true);
-    
+
     try {
-      // Fetch all data in parallel
-      const [usersRes, vendorsRes, productsRes, reviewsRes] = await Promise.allSettled([
-        adminAPI.getUsers().catch(() => ({ data: [] })),
-        adminAPI.getVendors().catch(() => ({ data: [] })),
-        adminAPI.getAllProducts().catch(() => ({ data: [] })),
-        adminAPI.getReviews().catch(() => ({ data: [] }))
+      const [
+        usersRes, vendorsRes, productsRes, reviewsRes, categoriesRes, revenueRes
+      ] = await Promise.allSettled([
+        adminAPI.getUsers(),
+        adminAPI.getVendors(),
+        adminAPI.getAllProducts(),
+        adminAPI.getReviews(),
+        adminAPI.getCategories ? adminAPI.getCategories() : Promise.reject('No categories endpoint'),
+        adminAPI.getRevenueOverview ? adminAPI.getRevenueOverview() : Promise.reject('No revenue endpoint')
       ]);
       
       // Process users
@@ -115,35 +119,53 @@ function AdminDashboard() {
         setRecentReviews(pendingReviewsList.slice(0, 5));
       }
       
-      // Update stats with real data
+      // Process categories
+      let categoriesData = [];
+      if (categoriesRes.status === 'fulfilled' && categoriesRes.value?.data) {
+        categoriesData = Array.isArray(categoriesRes.value.data) ? categoriesRes.value.data : (categoriesRes.value.data.data || []);
+        setCategories(categoriesData);
+      } else {
+        setCategories([]);
+      }
+      
+      // Process revenue data
+      let revenue = { labels: [], values: [] };
+      if (revenueRes.status === 'fulfilled' && revenueRes.value?.data) {
+        const rev = revenueRes.value.data;
+        revenue.labels = rev.labels || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        revenue.values = rev.values || [0,0,0,0,0,0];
+        setRevenueData(revenue);
+      } else {
+        setRevenueData({ labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], values: [0,0,0,0,0,0] });
+      }
+      
       setStats({
         totalUsers: usersData.length,
         totalVendors: vendorsData.length,
         totalProducts: productsData.length,
         totalOrders: 0,
-        totalRevenue: 0,
+        totalRevenue: revenue.values.reduce((a,b) => a+b, 0),
         pendingVendors: pendingVendorsList.length,
         pendingProducts: pendingProductsList.length,
         pendingReviews: pendingReviewsList.length,
-        totalCategories: 0
+        totalCategories: categoriesData.length
       });
       
       if (showToast) toast.success('Dashboard refreshed');
-      
     } catch (err) {
       console.error('Failed to load admin data:', err);
       if (showToast) toast.error('Failed to refresh data');
     } finally {
-      setRefreshing(false);
+      if (showToast) setRefreshing(false);
     }
   };
 
-  // Approve vendor with real-time updates
+  // Approve vendor
   const handleApproveVendor = async (vendorId) => {
     try {
       await adminAPI.approveVendor(vendorId);
       toast.success('Vendor approved successfully');
-      await fetchAdminData(false);
+      await fetchAdminData(false, true); // silent refresh
       triggerRealTimeUpdate();
     } catch (error) {
       console.error('Approve vendor error:', error);
@@ -151,12 +173,12 @@ function AdminDashboard() {
     }
   };
 
-  // Approve product with real-time updates
+  // Approve product
   const handleApproveProduct = async (productId) => {
     try {
       await adminAPI.approveProduct(productId);
       toast.success('Product approved successfully');
-      await fetchAdminData(false);
+      await fetchAdminData(false, true);
       triggerRealTimeUpdate();
     } catch (error) {
       console.error('Approve product error:', error);
@@ -164,12 +186,12 @@ function AdminDashboard() {
     }
   };
 
-  // Approve review with real-time updates
+  // Approve review
   const handleApproveReview = async (reviewId) => {
     try {
       await adminAPI.approveReview(reviewId);
       toast.success('Review approved successfully');
-      await fetchAdminData(false);
+      await fetchAdminData(false, true);
       triggerRealTimeUpdate();
     } catch (error) {
       console.error('Approve review error:', error);
@@ -177,13 +199,13 @@ function AdminDashboard() {
     }
   };
 
-  // Reject review with real-time updates
+  // Reject review
   const handleRejectReview = async (reviewId) => {
     if (window.confirm('Are you sure you want to reject this review?')) {
       try {
         await adminAPI.rejectReview(reviewId);
         toast.success('Review rejected');
-        await fetchAdminData(false);
+        await fetchAdminData(false, true);
         triggerRealTimeUpdate();
       } catch (error) {
         console.error('Reject review error:', error);
@@ -192,13 +214,13 @@ function AdminDashboard() {
     }
   };
 
-  // Delete review with real-time updates
+  // Delete review
   const handleDeleteReview = async (reviewId) => {
     if (window.confirm('Are you sure you want to permanently delete this review?')) {
       try {
         await adminAPI.deleteReview(reviewId);
         toast.success('Review deleted');
-        await fetchAdminData(false);
+        await fetchAdminData(false, true);
         triggerRealTimeUpdate();
       } catch (error) {
         console.error('Delete review error:', error);
@@ -216,19 +238,17 @@ function AdminDashboard() {
     }).format(amount || 0);
   };
 
-  // Load data on mount and set up real-time listeners
   useEffect(() => {
-    fetchAdminData(false);
+    fetchAdminData(false, true); // initial load – silent (no spinner)
     
     const handlePendingUpdate = () => {
-      fetchAdminData(false);
+      fetchAdminData(false, true); // silent refresh
     };
-    
     window.addEventListener('pendingCountsUpdated', handlePendingUpdate);
     
-    // Poll every 15 seconds
+    // Poll every 15 seconds (silent)
     const interval = setInterval(() => {
-      fetchAdminData(false);
+      fetchAdminData(false, true);
     }, 15000);
     
     return () => {
@@ -259,11 +279,11 @@ function AdminDashboard() {
     { icon: FaList, label: 'Categories', value: stats.totalCategories, color: '#7209b7', link: '/admin/categories' }
   ];
 
-  const revenueData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  const lineChartData = {
+    labels: revenueData.labels,
     datasets: [{
       label: 'Revenue',
-      data: [0, 0, 0, 0, 0, 0],
+      data: revenueData.values,
       borderColor: '#4361ee',
       backgroundColor: 'rgba(67, 97, 238, 0.1)',
       fill: true,
@@ -271,10 +291,10 @@ function AdminDashboard() {
     }]
   };
 
-  const categoryDistribution = {
-    labels: ['Electronics', 'Fashion', 'Home', 'Sports', 'Books', 'Other'],
+  const categoryDistributionData = {
+    labels: categories.length > 0 ? categories.map(c => c.name) : ['No categories'],
     datasets: [{
-      data: [0, 0, 0, 0, 0, 0],
+      data: categories.length > 0 ? categories.map(() => 1) : [1],
       backgroundColor: ['#4361ee', '#06d6a0', '#ffd166', '#ef476f', '#4cc9f0', '#fb8500']
     }]
   };
@@ -293,12 +313,12 @@ function AdminDashboard() {
               <Button 
                 variant="outline-light" 
                 size="sm" 
-                onClick={() => fetchAdminData(true)}
+                onClick={() => fetchAdminData(true, false)}
                 disabled={refreshing}
                 className="d-flex align-items-center gap-2"
               >
-                <FaSync className={refreshing ? 'spin' : ''} />
-                Refresh
+                <FaSync /> 
+                {refreshing ? 'Refreshing...' : 'Refresh'}
               </Button>
             </div>
           </div>
@@ -377,7 +397,7 @@ function AdminDashboard() {
               </Card.Header>
               <Card.Body>
                 <div style={{ height: '280px' }}>
-                  <Line data={revenueData} options={{
+                  <Line data={lineChartData} options={{
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } }
@@ -392,13 +412,20 @@ function AdminDashboard() {
                 <h6 className="mb-0">Category Distribution</h6>
               </Card.Header>
               <Card.Body>
-                <div style={{ height: '220px' }}>
-                  <Doughnut data={categoryDistribution} options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
-                  }} />
-                </div>
+                {categories.length > 0 ? (
+                  <div style={{ height: '220px' }}>
+                    <Doughnut data={categoryDistributionData} options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: { legend: { position: 'bottom' } }
+                    }} />
+                  </div>
+                ) : (
+                  <div className="text-center text-muted py-4">
+                    <FaList size={30} className="mb-2" />
+                    <p>No categories data available</p>
+                  </div>
+                )}
                 <div className="text-center mt-2">
                   <Link to="/admin/categories">
                     <Button variant="link" size="sm">Manage Categories</Button>
@@ -545,7 +572,7 @@ function AdminDashboard() {
                           <th>Email</th>
                           <th>Role</th>
                           <th>Status</th>
-                         </tr>
+                        </tr>
                       </thead>
                       <tbody>
                         {recentUsers.map(user => (
@@ -592,7 +619,7 @@ function AdminDashboard() {
                           <th>Product</th>
                           <th>Rating</th>
                           <th>Status</th>
-                         </tr>
+                        </tr>
                       </thead>
                       <tbody>
                         {recentReviews.map(review => (
@@ -660,8 +687,6 @@ function AdminDashboard() {
         .welcome-banner .text-muted { color: rgba(255,255,255,0.8) !important; }
         .quick-action-card, .stat-card { transition: all 0.3s ease; cursor: pointer; }
         .quick-action-card:hover, .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.1) !important; }
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .list-group-item { transition: all 0.2s ease; }
         .list-group-item:hover { background: #f8f9fa; }
         .table tbody tr:hover { background: #f8f9fa; }

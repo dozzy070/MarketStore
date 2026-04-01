@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Container, Row, Col, Card, Table, Badge, Button, Form, Modal, Alert } from 'react-bootstrap';
 import { 
   FaEye, 
@@ -26,66 +26,79 @@ function VendorOrders() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showDetails, setShowDetails] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    processing: 0,
-    shipped: 0,
-    delivered: 0,
-    cancelled: 0,
-    revenue: 0
-  });
+  const [refreshing, setRefreshing] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false); // track first fetch completion
+
+  // Compute stats dynamically from orders
+  const stats = useMemo(() => {
+    const totals = {
+      total: orders.length,
+      pending: 0,
+      processing: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+      revenue: 0
+    };
+    orders.forEach(order => {
+      const status = order.status || 'pending';
+      if (totals[status] !== undefined) totals[status]++;
+      if (status === 'delivered') totals.revenue += parseFloat(order.total) || 0;
+    });
+    return totals;
+  }, [orders]);
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
   useEffect(() => {
-    filterOrdersList(); // Fixed function name
+    filterOrdersList();
   }, [search, statusFilter, orders]);
 
- const fetchOrders = async () => {
-  setError(null);
-  setLoading(true);
-  
-  try {
-    console.log('Fetching orders...');
-    const response = await orderAPI.getOrders();
-    console.log('Full response:', JSON.stringify(response, null, 2));
+  const fetchOrders = async (showToast = false) => {
+    if (showToast) setRefreshing(true);
+    setError(null);
     
-    // Process orders data
-    let ordersData = [];
-    
-    if (response && response.data) {
-      console.log('Response data:', response.data);
+    try {
+      console.log('Fetching orders...');
+      const response = await orderAPI.getOrders();
+      console.log('Full response:', JSON.stringify(response, null, 2));
       
-      // Try to find where the orders array is
-      if (Array.isArray(response.data)) {
-        console.log('Response.data is an array');
-        ordersData = response.data;
-      } else if (response.data.orders && Array.isArray(response.data.orders)) {
-        console.log('Found orders array in response.data.orders');
-        ordersData = response.data.orders;
-      } else if (response.data.data && Array.isArray(response.data.data)) {
-        console.log('Found orders array in response.data.data');
-        ordersData = response.data.data;
-      } else {
-        // Log all keys to see what's available
-        console.log('Available keys in response.data:', Object.keys(response.data));
+      let ordersData = [];
+      if (response && response.data) {
+        if (Array.isArray(response.data)) {
+          ordersData = response.data;
+        } else if (response.data.orders && Array.isArray(response.data.orders)) {
+          ordersData = response.data.orders;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          ordersData = response.data.data;
+        } else {
+          console.log('Available keys:', Object.keys(response.data));
+        }
       }
+      
+      console.log('Final orders data:', ordersData);
+      setOrders(ordersData);
+      setHasLoaded(true);
+      
+      if (showToast) {
+        if (ordersData.length === 0) {
+          toast('No orders found', { icon: '📦' });
+        } else {
+          toast.success('Orders refreshed');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load orders:', err);
+      setError('Unable to load orders. Please try again later.');
+      if (showToast) toast.error('Failed to load orders');
+      setHasLoaded(true);
+    } finally {
+      if (showToast) setRefreshing(false);
     }
-    
-    console.log('Final orders data:', ordersData);
-    setOrders(ordersData);
-    
-    // Rest of your code...
-  } catch (err) {
-    // Error handling...
-  }
-};
+  };
 
-  // Fixed function name to match the one used in useEffect
   const filterOrdersList = () => {
     let filtered = [...orders];
 
@@ -113,21 +126,6 @@ function VendorOrders() {
         order?.id === id ? { ...order, status: newStatus } : order
       );
       setOrders(updatedOrders);
-      
-      const newStats = { ...stats };
-      const oldOrder = orders.find(o => o?.id === id);
-      
-      if (oldOrder?.status) {
-        newStats[oldOrder.status] = Math.max(0, (newStats[oldOrder.status] || 0) - 1);
-      }
-      newStats[newStatus] = (newStats[newStatus] || 0) + 1;
-      
-      if (newStatus === 'delivered' && oldOrder?.total) {
-        newStats.revenue += parseFloat(oldOrder.total);
-      }
-      
-      setStats(newStats);
-      
     } catch (error) {
       console.error('Failed to update status:', error);
       toast.error('Failed to update status');
@@ -268,9 +266,14 @@ function VendorOrders() {
               </Form.Select>
             </Col>
             <Col md={2}>
-              <Button variant="primary" onClick={fetchOrders} disabled={loading}>
-                <FaSync className={`me-2 ${loading ? 'fa-spin' : ''}`} /> 
-                {loading ? 'Loading...' : 'Refresh'}
+              <Button 
+                variant="primary" 
+                onClick={() => fetchOrders(true)} 
+                disabled={refreshing}
+                className="d-flex align-items-center gap-2"
+              >
+                <FaSync />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
               </Button>
             </Col>
           </Row>
@@ -290,19 +293,16 @@ function VendorOrders() {
                 <th>Total</th>
                 <th>Status</th>
                 <th>Actions</th>
-              </tr>
+               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {hasLoaded && filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-4">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                    <p className="text-muted mt-2">Loading orders...</p>
+                  <td colSpan="7" className="text-center py-4 text-muted">
+                    No orders found
                   </td>
                 </tr>
-              ) : filteredOrders.length > 0 ? (
+              ) : (
                 filteredOrders.map(order => (
                   <tr key={order.id}>
                     <td>#{order.id?.slice(0, 8) || 'N/A'}</td>
@@ -339,12 +339,6 @@ function VendorOrders() {
                     </td>
                   </tr>
                 ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center py-4 text-muted">
-                    No orders found
-                  </td>
-                </tr>
               )}
             </tbody>
           </Table>
@@ -380,7 +374,7 @@ function VendorOrders() {
                     <th>Price</th>
                     <th>Quantity</th>
                     <th>Total</th>
-                  </tr>
+                   </tr>
                 </thead>
                 <tbody>
                   {selectedOrder.items?.map(item => (

@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Badge, Image, Spinner } from 'react-bootstrap';
+import { Row, Col, Card, Form, Button, Badge, Image } from 'react-bootstrap';
 import { 
   FaUser, 
-  FaEnvelope, 
-  FaPhone, 
-  FaMapMarkerAlt, 
   FaEdit, 
   FaSave, 
   FaTimes,
@@ -12,36 +9,38 @@ import {
   FaCalendar,
   FaShoppingBag,
   FaHeart,
-  FaStar
+  FaStar,
+  FaSpinner,
+  FaPhone,
+  FaMapMarkerAlt
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
-import { userAPI } from '../services/api';
+import { userAPI, orderAPI, paymentAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 function UserProfile() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
-  
-  // Default profile from auth user
+  const [profileError, setProfileError] = useState(false);
+
   const [profile, setProfile] = useState({
-    full_name: user?.full_name || 'User',
-    email: user?.email || 'user@example.com',
-    phone: user?.phone || '+234 801 234 5678',
-    location: user?.location || 'Lagos, Nigeria',
+    full_name: user?.full_name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    location: user?.location || '',
     avatar: '',
-    bio: 'No bio added yet.',
+    bio: '',
     joined: user?.created_at || new Date().toISOString(),
     verified: user?.verified || false
   });
 
   const [stats, setStats] = useState({
-    orders: 24,
-    wishlist: 18,
-    reviews: 12,
-    totalSpent: 245000
+    orders: 0,
+    wishlist: 0,
+    reviews: 0,
+    totalSpent: 0
   });
 
   const [formData, setFormData] = useState({
@@ -51,34 +50,107 @@ function UserProfile() {
     bio: profile.bio
   });
 
-  useEffect(() => {
-    // Try to fetch additional profile data
-    const fetchProfileData = async () => {
-      try {
-        const response = await userAPI.getProfile();
-        if (response.data) {
-          const data = response.data.data || response.data;
-          setProfile(prev => ({
-            ...prev,
-            ...data,
-            full_name: data.full_name || prev.full_name,
-            phone: data.phone || data.phone_number || prev.phone,
-            location: data.location || prev.location,
-            bio: data.bio || prev.bio
-          }));
-          setFormData({
-            full_name: data.full_name || profile.full_name,
-            phone: data.phone || data.phone_number || profile.phone,
-            location: data.location || profile.location,
-            bio: data.bio || profile.bio
-          });
-        }
-      } catch (error) {
-        console.log('Using default profile data');
+  // Fetch all data silently (no loading spinner)
+  const fetchUserData = async () => {
+    setProfileError(false);
+
+    let profileData = null;
+    let ordersData = [];
+    let wishlistCount = 0;
+    let reviewsCount = 0;
+    let totalSpent = 0;
+
+    // 1. Fetch profile
+    try {
+      const response = await userAPI.getProfile();
+      if (response.data) {
+        profileData = response.data.data || response.data.user || response.data;
       }
-    };
-    
-    fetchProfileData();
+    } catch (err) {
+      console.error('Failed to fetch profile:', err);
+      setProfileError(true);
+    }
+
+    // 2. Fetch orders
+    try {
+      const response = await orderAPI.getOrders();
+      if (response.data) {
+        ordersData = response.data.orders ||
+          response.data.data ||
+          (Array.isArray(response.data) ? response.data : []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch orders:', err);
+    }
+
+    // 3. Fetch wishlist count
+    try {
+      const response = await userAPI.getWishlist();
+      if (response.data) {
+        const wishlistData = response.data;
+        if (Array.isArray(wishlistData)) wishlistCount = wishlistData.length;
+        else if (wishlistData.data && Array.isArray(wishlistData.data)) wishlistCount = wishlistData.data.length;
+        else if (wishlistData.wishlist && Array.isArray(wishlistData.wishlist)) wishlistCount = wishlistData.wishlist.length;
+      }
+    } catch (err) {
+      console.error('Failed to fetch wishlist:', err);
+    }
+
+    // 4. Fetch reviews count (only if method exists)
+    if (typeof userAPI.getReviews === 'function') {
+      try {
+        const response = await userAPI.getReviews();
+        if (response.data) {
+          const reviewsData = response.data;
+          if (Array.isArray(reviewsData)) reviewsCount = reviewsData.length;
+          else if (reviewsData.data && Array.isArray(reviewsData.data)) reviewsCount = reviewsData.data.length;
+          else if (reviewsData.reviews && Array.isArray(reviewsData.reviews)) reviewsCount = reviewsData.reviews.length;
+        }
+      } catch (err) {
+        console.error('Failed to fetch reviews:', err);
+      }
+    }
+
+    // 5. Fetch payments
+    try {
+      const response = await paymentAPI.getPaymentHistory();
+      if (response.data) {
+        const payments = response.data.payments || [];
+        totalSpent = payments.reduce((sum, p) => sum + (p.status === 'success' ? (p.amount || 0) : 0), 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch payments:', err);
+    }
+
+    // Update state with real data (fallback to auth context)
+    setProfile({
+      full_name: profileData?.full_name || user?.full_name || '',
+      email: profileData?.email || user?.email || '',
+      phone: profileData?.phone || profileData?.phone_number || user?.phone || '',
+      location: profileData?.location || user?.location || '',
+      avatar: profileData?.avatar || '',
+      bio: profileData?.bio || '',
+      joined: profileData?.created_at || user?.created_at || new Date().toISOString(),
+      verified: profileData?.verified || user?.verified || false
+    });
+
+    setFormData({
+      full_name: profileData?.full_name || user?.full_name || '',
+      phone: profileData?.phone || profileData?.phone_number || user?.phone || '',
+      location: profileData?.location || user?.location || '',
+      bio: profileData?.bio || ''
+    });
+
+    setStats({
+      orders: ordersData.length,
+      wishlist: wishlistCount,
+      reviews: reviewsCount,
+      totalSpent
+    });
+  };
+
+  useEffect(() => {
+    fetchUserData();
   }, []);
 
   const handleChange = (e) => {
@@ -93,21 +165,36 @@ function UserProfile() {
     setSaving(true);
     try {
       await userAPI.updateProfile(formData);
-      setProfile({ ...profile, ...formData });
+      setProfile(prev => ({ ...prev, ...formData }));
       setEditing(false);
       toast.success('Profile updated successfully');
     } catch (error) {
-      // Optimistic update
-      setProfile({ ...profile, ...formData });
-      setEditing(false);
-      toast.success('Profile updated (demo mode)');
+      console.error('Failed to update profile:', error);
+      toast.error('Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
+  const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return '₦0';
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // No loading spinner – component renders immediately with fallback data
   return (
     <DashboardLayout>
+      {profileError && (
+        <div className="alert alert-warning alert-dismissible fade show" role="alert">
+          <strong>⚠️</strong> Could not fetch your profile data. Displaying information from your account.
+          <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      )}
       <Row>
         <Col lg={4}>
           <Card className="border-0 shadow-sm mb-4">
@@ -141,11 +228,11 @@ function UserProfile() {
               <div className="text-start">
                 <p className="mb-2">
                   <FaPhone className="text-primary me-2" />
-                  {profile.phone}
+                  {profile.phone || 'Not provided'}
                 </p>
                 <p className="mb-2">
                   <FaMapMarkerAlt className="text-primary me-2" />
-                  {profile.location}
+                  {profile.location || 'Not provided'}
                 </p>
                 <p className="mb-0">
                   <FaCalendar className="text-primary me-2" />
@@ -190,7 +277,7 @@ function UserProfile() {
               <Card className="border-0 shadow-sm text-center">
                 <Card.Body>
                   <FaShoppingBag className="text-success mb-2" size={24} />
-                  <h3>₦{(stats.totalSpent / 1000).toFixed(1)}k</h3>
+                  <h3>{formatCurrency(stats.totalSpent)}</h3>
                   <p className="text-muted mb-0">Total Spent</p>
                 </Card.Body>
               </Card>
@@ -298,19 +385,19 @@ function UserProfile() {
                     <Col md={6}>
                       <p className="mb-3">
                         <strong>Phone:</strong><br />
-                        <span className="text-muted">{profile.phone}</span>
+                        <span className="text-muted">{profile.phone || 'Not provided'}</span>
                       </p>
                     </Col>
                     <Col md={6}>
                       <p className="mb-3">
                         <strong>Location:</strong><br />
-                        <span className="text-muted">{profile.location}</span>
+                        <span className="text-muted">{profile.location || 'Not provided'}</span>
                       </p>
                     </Col>
                   </Row>
                   <p className="mb-0">
                     <strong>Bio:</strong><br />
-                    <span className="text-muted">{profile.bio}</span>
+                    <span className="text-muted">{profile.bio || 'No bio added yet.'}</span>
                   </p>
                 </>
               )}
@@ -318,6 +405,16 @@ function UserProfile() {
           </Card>
         </Col>
       </Row>
+
+      <style>{`
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </DashboardLayout>
   );
 }
