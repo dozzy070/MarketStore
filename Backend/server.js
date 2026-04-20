@@ -12,7 +12,7 @@ import authRoutes from './routes/auth.routes.js';
 import productRoutes from './routes/product.routes.js';
 import orderRoutes from './routes/order.routes.js';
 import vendorRoutes from './routes/vendor.routes.js';
-import userRoutes from './routes/user.routes.js';
+import userRoutes from './routes/customer/user.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import notificationRoutes from './routes/notification.routes.js';

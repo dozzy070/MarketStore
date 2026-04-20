@@ -9,88 +9,88 @@ import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './components/DashboardLayout';
 
 // ==================== PUBLIC ROUTES ====================
-import LandingPage from './pages/LandingPage';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ResetPassword from './pages/ResetPassword';
-import Cart from './pages/Cart';
-import ProductDetails from './pages/ProductDetails';
-import CategoryProducts from './pages/CategoryProducts';
-import SearchResults from './pages/SearchResults';
-import Categories from './pages/Categories';
-import ForgotPassword from './pages/ForgotPassword';
-import GoogleCallback from './pages/GoogleCallback';
-import FAQ from './pages/FAQ';
-import Contact from './pages/Contact';
-import AboutUs from './pages/AboutUs';
-import TermsConditions from './pages/TermsConditions';
-import TrackOrder from './pages/TrackOrder';
-import ShippingInfo from './pages/ShippingInfo';
-import ReturnsRefunds from './pages/ReturnsRefunds';
-import Charity from './pages/Charity';
-import Blog from './pages/Blog';
-import BecomeVendor from './pages/BecomeVendor';
-import BuyerSafety from './pages/BuyerSafety';
+import LandingPage from './pages/general/LandingPage';
+import Login from './pages/general/Login';
+import Register from './pages/general/Register';
+import ResetPassword from './pages/general/ResetPassword';
+import Cart from './pages/user/Cart';
+import ProductDetails from './pages/general/ProductDetails';
+import CategoryProducts from './pages/user/CategoryProducts';
+import SearchResults from './pages/general/SearchResults';
+import Categories from './pages/user/Categories';
+import ForgotPassword from './pages/general/ForgotPassword';
+import GoogleCallback from './pages/general/GoogleCallback';
+import FAQ from './pages/general/FAQ';
+import Contact from './pages/general/Contact';
+import AboutUs from './pages/general/AboutUs';
+import TermsConditions from './pages/general/TermsConditions';
+import TrackOrder from './pages/general/TrackOrder';
+import ShippingInfo from './pages/general/ShippingInfo';
+import ReturnsRefunds from './pages/general/ReturnsRefunds';
+import Charity from './pages/general/Charity';
+import Blog from './pages/general/Blog';
+import BecomeVendor from './pages/general/BecomeVendor';
+import BuyerSafety from './pages/general/BuyerSafety';
 
 // ==================== STORE PAGES ====================
-import Stores from './pages/Stores';
-import StoreDetails from './pages/StoreDetails';
-import StoreProducts from './pages/StoreProducts';
+import Stores from './pages/general/Stores';
+import StoreDetails from './pages/general/StoreDetails';
+import StoreProducts from './pages/general/StoreProducts';
 
 // ==================== HELP & SUPPORT PAGES ====================
-import HelpCenter from './pages/HelpCenter';
+import HelpCenter from './pages/general/HelpCenter';
 
 // ==================== USER ROUTES ====================
-import UserDashboard from './pages/UserDashboard';
-import UserOrders from './pages/UserOrders';
-import UserProfile from './pages/UserProfile';
-import UserWishlist from './pages/UserWishlist';
-import UserSettings from './pages/UserSettings';
-import Checkout from './pages/Checkout';
-import OrderTracking from './pages/OrderTracking';
-import UserReviews from './pages/UserReviews';
-import ActivityLog from './pages/ActivityLog';
+import UserDashboard from './pages/user/UserDashboard';
+import UserOrders from './pages/user/UserOrders';
+import UserProfile from './pages/user/UserProfile';
+import UserWishlist from './pages/user/UserWishlist';
+import UserSettings from './pages/user/UserSettings';
+import Checkout from './pages/user/Checkout';
+import OrderTracking from './pages/user/OrderTracking';
+import UserReviews from './pages/user/UserReviews';
+import ActivityLog from './pages/user/ActivityLog';
 import AccountHelp from './pages/help/AccountHelp';
 import OrdersShipping from './pages/help/OrdersShipping';
 import PaymentsHelp from './pages/help/PaymentsHelp';
 import VendorHelp from './pages/help/VendorHelp';
 import Policies from './pages/help/Policies';
-import UserPayments from './pages/UserPayments';
-import ProductList from './pages/ProductList';
+import UserPayments from './pages/user/UserPayments';
+import ProductList from './pages/general/ProductList';
 
 
 // ==================== VENDOR ROUTES ====================
-import VendorDashboard from './pages/VendorDashboard';
-import Products from './pages/Products';
-import AddProduct from './pages/AddProduct';
-import VendorOrders from './pages/VendorOrders';
-import MyStore from './pages/MyStore';
-import VendorProfile from './pages/VendorProfile';
-import VendorSettings from './pages/VendorSettings';
-import VendorPayouts from './pages/VendorPayouts';
+import VendorDashboard from './pages/vendor/VendorDashboard';
+import Products from './pages/vendor/Products';
+import AddProduct from './pages/vendor/AddProduct';
+import VendorOrders from './pages/vendor/VendorOrders';
+import MyStore from './pages/vendor/MyStore';
+import VendorProfile from './pages/vendor/VendorProfile';
+import VendorSettings from './pages/vendor/VendorSettings';
+import VendorPayouts from './pages/vendor/VendorPayouts';
 
 // ==================== VENDOR STORE ROUTES ====================
-import StoreSettings from './pages/StoreSettings';
+import StoreSettings from './pages/vendor/StoreSettings';
 
 // ==================== ADMIN ROUTES ====================
-import AdminDashboard from './pages/AdminDashboard';
-import AdminUsers from './pages/AdminUsers';
-import AdminVendors from './pages/AdminVendors';
-import AdminProducts from './pages/AdminProducts';
-import AdminOrders from './pages/AdminOrders';
-import AdminCategories from './pages/AdminCategories';
-import AdminReviews from './pages/AdminReviews';
-import AdminAuditLog from './pages/AdminAuditLog';
-import AdminSettings from './pages/AdminSettings';
-import AdminAnalytics from './pages/AdminAnalytics';
-import AdminProfile from './pages/AdminProfile';
-import AdminPendingApprovals from './pages/AdminPendingApprovals';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminVendors from './pages/admin/AdminVendors';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminCategories from './pages/admin/AdminCategories';
+import AdminReviews from './pages/admin/AdminReviews';
+import AdminAuditLog from './pages/admin/AdminAuditLog';
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminProfile from './pages/admin/AdminProfile';
+import AdminPendingApprovals from './pages/admin/AdminPendingApprovals';
 
 // ==================== ADMIN STORE ROUTES ====================
-import AdminStores from './pages/AdminStores';
-import AdminStoreDetails from './pages/AdminStoreDetails';
-import ApproveStore from './pages/ApproveStore';
-import AdminCreateUser from './pages/AdminCreateUser';
+import AdminStores from './pages/admin/AdminStores';
+import AdminStoreDetails from './pages/admin/AdminStoreDetails';
+import ApproveStore from './pages/admin/ApproveStore';
+import AdminCreateUser from './pages/admin/AdminCreateUser';
 
 // ==================== REDIRECT HANDLER ====================
 const DashboardRedirectHandler = () => {
