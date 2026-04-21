@@ -581,12 +581,16 @@ function Register() {
                                 <Form.Control
                                   type="text"
                                   name="fullName"
-                                  placeholder="John Doe"
+                                  placeholder="Enter your full name"
                                   value={formData.fullName}
                                   onChange={handleChange}
                                   required
-                                  className="border-0 py-2"
-                                  style={{ background: '#f8f9fa' }}
+                                  className="border-0 py-3 fs-6"
+                                  style={{
+                                    background: 'transparent',
+                                    fontWeight: '500',
+                                    borderRadius: '0 8px 8px 0'
+                                  }}
                                 />
                               </InputGroup>
                             </Form.Group>

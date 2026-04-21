@@ -4,6 +4,7 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -46,6 +47,22 @@ requiredEnv.forEach(key => {
     console.log(`✅ ${key} is set`);
   }
 });
+
+// ==================== Security Headers ====================
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://js.paystack.co", "https://paystack.com"],
+      styleSrc: ["'self'", "https://paystack.com", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://api.paystack.co"],
+      frameSrc: ["'self'", "https://paystack.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
 
 // ==================== Middleware ====================
 // Allowed origins (including your Vercel frontend)

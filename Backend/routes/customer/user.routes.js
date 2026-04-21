@@ -1,7 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { authenticate } from '../middleware/authMiddleware.js';
-import pool from '../db/db.js';
+import pool from '../../db/db.js';
 
 const router = express.Router();
 

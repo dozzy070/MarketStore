@@ -209,23 +209,82 @@ function Login() {
 
   return (
     <>
-      <div className="login-page" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-        <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center py-5">
+      <div className="login-page" style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Background Pattern */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          opacity: 0.1
+        }}></div>
+
+        <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center py-5" style={{ position: 'relative', zIndex: 1 }}>
           <Row className="w-100">
             <Col lg={5} md={8} className="mx-auto">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
               >
-                <Card className="border-0 shadow-lg" style={{ borderRadius: '24px', overflow: 'hidden' }}>
+                <Card className="border-0 shadow-lg" style={{
+                  borderRadius: '24px',
+                  overflow: 'hidden',
+                  backdropFilter: 'blur(20px)',
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                }}>
                   {/* Decorative Header */}
-                  <div className="bg-primary text-white text-center py-4" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                    <div className="bg-white bg-opacity-20 rounded-circle d-inline-flex p-3 mb-3">
-                      <FaStore size={32} className="text-white" />
+                  <div className="bg-primary text-white text-center py-4" style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    position: 'relative'
+                  }}>
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M50 50c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0 11-9 20-20 20s-20-9-20-20 9-20 20-20 20 9 20 20z'/%3E%3C/g%3E%3C/svg%3E")`,
+                      opacity: 0.3
+                    }}></div>
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
+                        className="bg-white bg-opacity-20 rounded-circle d-inline-flex p-3 mb-3"
+                        style={{
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(255,255,255,0.2)'
+                        }}
+                      >
+                        <FaStore size={32} className="text-white" />
+                      </motion.div>
+                      <motion.h3
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.5 }}
+                        className="mb-1 fw-bold"
+                      >
+                        Welcome Back
+                      </motion.h3>
+                      <motion.p
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4, duration: 0.5 }}
+                        className="mb-0 text-white-50"
+                      >
+                        Sign in to your account
+                      </motion.p>
                     </div>
-                    <h3 className="mb-1 fw-bold">Welcome Back</h3>
-                    <p className="mb-0 text-white-50">Sign in to your account</p>
                   </div>
 
                   <Card.Body className="p-4 p-lg-5">

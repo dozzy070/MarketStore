@@ -359,21 +359,12 @@ router.post('/reset-password', [
 });
 
 /* ================= CHECK EMAIL AVAILABILITY ================= */
-router.post('/check-email', async (req, res) => {
-  let client;
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ exists: false, message: 'Email is required' });
-
-    client = await pool.connect();
-    const result = await client.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
-    res.json({ exists: result.rows.length > 0 });
-  } catch (error) {
-    console.error('Email check error:', error);
-    res.status(500).json({ exists: false, message: 'Server error' });
-  } finally {
-    if (client) client.release();
-  }
+router.post('/check-email', (req, res) => {
+  console.log('📧 Check email request received');
+  console.log('Request body:', req.body);
+  console.log('Content-Type:', req.headers['content-type']);
+  
+  res.json({ exists: false, message: 'Test response' });
 });
 
 /* ================= GOOGLE OAUTH ================= */
