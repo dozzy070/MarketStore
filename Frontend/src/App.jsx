@@ -26,7 +26,6 @@ import AboutUs from './pages/general/AboutUs';
 import TermsConditions from './pages/general/TermsConditions';
 import TrackOrder from './pages/general/TrackOrder';
 import ShippingInfo from './pages/general/ShippingInfo';
-import ReturnsRefunds from './pages/general/ReturnsRefunds';
 import Charity from './pages/general/Charity';
 import Blog from './pages/general/Blog';
 import BecomeVendor from './pages/general/BecomeVendor';
@@ -156,7 +155,8 @@ function App() {
         <Route path="/auth/google-callback" element={<GoogleCallback />} />
         <Route path="/shipping" element={<ShippingInfo />} />
         <Route path="/track" element={<TrackOrder />} />
-        <Route path="/returns" element={<ReturnsRefunds />} />
+        <Route path="/returns" element={<Navigate to="/contact" replace />} />
+        <Route path="/help/returns" element={<Navigate to="/contact" replace />} />
         <Route path="/charity" element={<Charity />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/become-vendor" element={<BecomeVendor />} />

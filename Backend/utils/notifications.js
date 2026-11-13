@@ -91,7 +91,7 @@ export const notifyWelcome = async (userId, userName) => {
   return await createNotification(
     userId,
     'welcome',
-    'Welcome to MarketStore! 🎉',
+    'Welcome to DoorMart! 🎉',
     `Hi ${userName}! Thanks for joining. Start shopping and discover amazing deals.`,
     '/',
     { userId }

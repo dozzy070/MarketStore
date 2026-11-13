@@ -178,7 +178,7 @@ function LandingSidebar({ show, onHide }) {
               <FaHeart className="text-danger" size={12} /> Made with love
             </p>
             <p className="text-muted small mt-1">
-              © {new Date().getFullYear()} MarketStore
+              © {new Date().getFullYear()} DoorMart
             </p>
           </div>
         </Offcanvas.Body>

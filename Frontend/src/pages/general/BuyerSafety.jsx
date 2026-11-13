@@ -84,7 +84,7 @@ function BuyerSafety() {
   const guideSections = [
     {
       title: '🔐 Secure Payments & Encryption',
-      content: 'All payments on MarketStore are processed through Paystack, a PCI‑DSS Level 1 certified payment gateway. Your card details are never stored on our servers – they are tokenized and encrypted. We also enforce HTTPS across the site, ensuring your data is safe during transmission. We support multiple secure payment methods including cards, bank transfers, and mobile money.',
+      content: 'All payments on DoorMart are processed through Paystack, a PCI‑DSS Level 1 certified payment gateway. Your card details are never stored on our servers – they are tokenized and encrypted. We also enforce HTTPS across the site, ensuring your data is safe during transmission. We support multiple secure payment methods including cards, bank transfers, and mobile money.',
     },
     {
       title: '✅ Vendor Verification Process',
@@ -100,7 +100,7 @@ function BuyerSafety() {
     },
     {
       title: '🚨 How to Spot Scams',
-      content: 'Be cautious of deals that seem too good to be true. Never communicate off‑platform or send money outside MarketStore. Look for verified seller badges and read recent reviews. If a seller pressures you to act quickly or asks for personal information, report them immediately. Also, avoid sharing your OTP or banking details.',
+      content: 'Be cautious of deals that seem too good to be true. Never communicate off‑platform or send money outside DoorMart. Look for verified seller badges and read recent reviews. If a seller pressures you to act quickly or asks for personal information, report them immediately. Also, avoid sharing your OTP or banking details.',
     },
     {
       title: '📦 Order Tracking & Delivery',
@@ -112,7 +112,7 @@ function BuyerSafety() {
     },
     {
       title: '📞 Need Immediate Help?',
-      content: 'Our support team is available Monday to Friday, 9am‑6pm (WAT). You can reach us via email at support@marketstore.com or phone at +234 801 234 5678. For urgent issues, please use the live chat feature in your dashboard.',
+      content: 'Our support team is available Monday to Friday, 9am‑6pm (WAT). You can reach us via email at support@doormart.com or phone at +234 801 234 5678. For urgent issues, please use the live chat feature in your dashboard.',
     },
   ];
 
@@ -273,7 +273,7 @@ function BuyerSafety() {
             <Button variant="primary" size="lg" onClick={() => setShowReportModal(true)} className="rounded-pill px-4">
               <FaExclamationTriangle className="me-2" /> Report an Issue
             </Button>
-            <Button variant="outline-primary" size="lg" href="mailto:support@marketstore.com" className="rounded-pill px-4">
+            <Button variant="outline-primary" size="lg" href="mailto:support@doormart.com" className="rounded-pill px-4">
               <FaEnvelope className="me-2" /> Email Support
             </Button>
             <Button variant="outline-primary" size="lg" href="tel:+2348012345678" className="rounded-pill px-4">
@@ -287,10 +287,10 @@ function BuyerSafety() {
       {/* Comprehensive Safety Guide Modal */}
       <Modal show={showGuideModal} onHide={() => setShowGuideModal(false)} size="lg" centered>
         <Modal.Header closeButton>
-          <Modal.Title>MarketStore Safety Guide</Modal.Title>
+          <Modal.Title>DoorMart Safety Guide</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p className="lead">Your complete guide to staying safe while shopping on MarketStore.</p>
+          <p className="lead">Your complete guide to staying safe while shopping on DoorMart.</p>
           <Accordion defaultActiveKey="0">
             {guideSections.map((section, idx) => (
               <Accordion.Item eventKey={idx.toString()} key={idx}>
@@ -300,7 +300,7 @@ function BuyerSafety() {
             ))}
           </Accordion>
           <div className="bg-light p-3 rounded mt-4">
-            <strong>Need immediate assistance?</strong> Contact us at <a href="mailto:support@marketstore.com">support@marketstore.com</a> or call +234 801 234 5678.
+            <strong>Need immediate assistance?</strong> Contact us at <a href="mailto:support@doormart.com">support@doormart.com</a> or call +234 801 234 5678.
           </div>
         </Modal.Body>
         <Modal.Footer>

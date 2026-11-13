@@ -15,7 +15,6 @@ import {
   FaShare,
   FaCheckCircle,
   FaTruck,
-  FaUndo,
   FaArrowLeft
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
@@ -500,9 +499,6 @@ function StoreProducts() {
                         <div className="d-flex align-items-center gap-2">
                           <Badge bg="light" text="dark" className="small">
                             <FaTruck className="me-1" size={10} /> Free Shipping
-                          </Badge>
-                          <Badge bg="light" text="dark" className="small">
-                            <FaUndo className="me-1" size={10} /> 30-day
                           </Badge>
                         </div>
                         <small className="text-muted">

@@ -68,7 +68,7 @@ function PaymentModal({ show, onClose, amount: presetAmount, onSuccess }) {
 
     try {
       const userStr = localStorage.getItem('user');
-      let userEmail = 'customer@marketstore.com';
+      let userEmail = 'customer@doormart.com';
       let userName = 'Customer';
       if (userStr) {
         const user = JSON.parse(userStr);

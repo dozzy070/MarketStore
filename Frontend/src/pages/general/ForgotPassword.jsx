@@ -101,7 +101,7 @@ function ForgotPassword() {
                           </InputGroup.Text>
                           <Form.Control
                             type="email"
-                            placeholder="hello@marketstore.com"
+                            placeholder="hello@doormart.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required

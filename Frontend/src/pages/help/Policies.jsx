@@ -25,13 +25,13 @@ function Policies() {
       content: (
         <div>
           <h6>1. Acceptance of Terms</h6>
-          <p>By accessing or using MarketStore, you agree to be bound by these Terms of Service. If you do not agree, please do not use our services.</p>
+          <p>By accessing or using DoorMart, you agree to be bound by these Terms of Service. If you do not agree, please do not use our services.</p>
           
           <h6 className="mt-4">2. Account Registration</h6>
           <p>You must be at least 18 years old to create an account. You are responsible for maintaining the security of your account and for all activities that occur under your account.</p>
           
           <h6 className="mt-4">3. Products and Services</h6>
-          <p>MarketStore is a marketplace connecting buyers and sellers. We do not manufacture or store products. Product listings are provided by independent vendors.</p>
+          <p>DoorMart is a marketplace connecting buyers and sellers. We do not manufacture or store products. Product listings are provided by independent vendors.</p>
           
           <h6 className="mt-4">4. Pricing and Payments</h6>
           <p>All prices are in Nigerian Naira (₦) unless otherwise stated. We accept various payment methods. Orders are processed upon successful payment confirmation.</p>
@@ -39,20 +39,17 @@ function Policies() {
           <h6 className="mt-4">5. Shipping and Delivery</h6>
           <p>Delivery times vary by location and vendor. Estimated delivery times are provided for reference and are not guaranteed.</p>
           
-          <h6 className="mt-4">6. Returns and Refunds</h6>
-          <p>Returns are subject to our Return Policy. Customers have 30 days to request returns for eligible items.</p>
-          
-          <h6 className="mt-4">7. Prohibited Activities</h6>
+          <h6 className="mt-4">6. Prohibited Activities</h6>
           <p>You may not use our platform for illegal activities, to infringe on intellectual property rights, or to distribute harmful content.</p>
           
-          <h6 className="mt-4">8. Limitation of Liability</h6>
-          <p>MarketStore is not liable for any indirect, incidental, or consequential damages arising from your use of our services.</p>
+          <h6 className="mt-4">7. Limitation of Liability</h6>
+          <p>DoorMart is not liable for any indirect, incidental, or consequential damages arising from your use of our services.</p>
           
-          <h6 className="mt-4">9. Modifications</h6>
+          <h6 className="mt-4">8. Modifications</h6>
           <p>We reserve the right to modify these terms at any time. Continued use of the platform constitutes acceptance of updated terms.</p>
           
-          <h6 className="mt-4">10. Contact</h6>
-          <p>For questions about these terms, contact us at legal@marketstore.com</p>
+          <h6 className="mt-4">9. Contact</h6>
+          <p>For questions about these terms, contact us at legal@doormart.com</p>
           
           <div className="mt-4 text-muted small">
             Last updated: January 1, 2024
@@ -140,7 +137,7 @@ function Policies() {
       content: (
         <div>
           <h6>Payment Security</h6>
-          <p>All payments on MarketStore are processed through secure, PCI DSS compliant payment gateways. Your card details are never stored on our servers.</p>
+          <p>All payments on DoorMart are processed through secure, PCI DSS compliant payment gateways. Your card details are never stored on our servers.</p>
           
           <h6 className="mt-4">Data Protection</h6>
           <p>We use SSL encryption to protect data transmission between your browser and our servers. All sensitive information is encrypted at rest.</p>
@@ -152,7 +149,7 @@ function Policies() {
           <p>We monitor transactions for suspicious activity. If we detect potential fraud, we may contact you to verify the transaction.</p>
           
           <h6 className="mt-4">Reporting Security Issues</h6>
-          <p>If you discover a security vulnerability, please report it to security@marketstore.com. We will investigate and address the issue promptly.</p>
+          <p>If you discover a security vulnerability, please report it to security@doormart.com. We will investigate and address the issue promptly.</p>
           
           <div className="mt-4 text-muted small">
             Last updated: January 1, 2024
@@ -263,7 +260,7 @@ function Policies() {
                 <FaCheckCircle size={40} className="mb-3" />
                 <h5>Questions About Our Policies?</h5>
                 <p className="mb-3">Contact our legal team for clarification on any policy</p>
-                <Button variant="light" href="mailto:legal@marketstore.com">
+                <Button variant="light" href="mailto:legal@doormart.com">
                   Contact Legal Team
                 </Button>
               </Card.Body>

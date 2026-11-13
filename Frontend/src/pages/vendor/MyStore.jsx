@@ -62,7 +62,6 @@ function MyStore() {
       whatsapp: ''
     },
     shipping_policy: 'Free shipping on orders over ₦50,000. Delivery within 3-5 business days.',
-    return_policy: '30-day return policy. Items must be unused and in original packaging.',
     payment_methods: ['Bank Transfer', 'Card Payment'],
     established: new Date().getFullYear().toString(),
     business_hours: {
@@ -170,7 +169,6 @@ function MyStore() {
         whatsapp: ''
       },
       shipping_policy: profileData.shipping_policy || 'Free shipping on orders over ₦50,000. Delivery within 3-5 business days.',
-      return_policy: profileData.return_policy || '30-day return policy. Items must be unused and in original packaging.',
       payment_methods: profileData.payment_methods || ['Bank Transfer', 'Card Payment'],
       established: profileData.established || new Date().getFullYear().toString(),
       business_hours: profileData.business_hours || {
@@ -202,7 +200,6 @@ function MyStore() {
         whatsapp: ''
       },
       shipping_policy: profileData.shipping_policy || 'Free shipping on orders over ₦50,000. Delivery within 3-5 business days.',
-      return_policy: profileData.return_policy || '30-day return policy. Items must be unused and in original packaging.',
       payment_methods: profileData.payment_methods || ['Bank Transfer', 'Card Payment'],
       established: profileData.established || new Date().getFullYear().toString(),
       business_hours: profileData.business_hours || {
@@ -760,7 +757,7 @@ function MyStore() {
           {/* Policies Tab */}
           {activeTab === 'policies' && (
             <Row>
-              <Col md={6}>
+              <Col md={12}>
                 <h6 className="mb-3">Shipping Policy</h6>
                 {editing ? (
                   <Form.Control
@@ -772,20 +769,6 @@ function MyStore() {
                   />
                 ) : (
                   <p className="text-muted">{store.shipping_policy}</p>
-                )}
-              </Col>
-              <Col md={6}>
-                <h6 className="mb-3">Return Policy</h6>
-                {editing ? (
-                  <Form.Control
-                    as="textarea"
-                    name="return_policy"
-                    rows={5}
-                    value={formData.return_policy || ''}
-                    onChange={handleChange}
-                  />
-                ) : (
-                  <p className="text-muted">{store.return_policy}</p>
                 )}
               </Col>
             </Row>

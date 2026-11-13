@@ -47,7 +47,7 @@ function SimpleLayout({ children }) {
         <Container fluid className="px-4">
           <Navbar.Brand as={Link} to="/" className="fw-bold">
             <FaStore className="text-primary me-2" />
-            MarketStore
+            DoorMart
           </Navbar.Brand>
           
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -162,7 +162,7 @@ function SimpleLayout({ children }) {
         <Container>
           <Row>
             <Col md={4}>
-              <h5>MarketStore</h5>
+              <h5>DoorMart</h5>
               <p className="text-white-50 small">Your one-stop destination for quality products at great prices.</p>
             </Col>
             <Col md={4}>
@@ -176,13 +176,13 @@ function SimpleLayout({ children }) {
             </Col>
             <Col md={4}>
               <h6>Contact</h6>
-              <p className="text-white-50 small mb-1">Email: support@marketstore.com</p>
+              <p className="text-white-50 small mb-1">Email: support@doormart.com</p>
               <p className="text-white-50 small">Phone: +234 801 234 5678</p>
             </Col>
           </Row>
           <hr className="border-secondary" />
           <div className="text-center text-white-50 small">
-            &copy; {new Date().getFullYear()} MarketStore. All rights reserved.
+            &copy; {new Date().getFullYear()} DoorMart. All rights reserved.
           </div>
         </Container>
       </footer>

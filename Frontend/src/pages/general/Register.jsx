@@ -482,7 +482,7 @@ function Register() {
                         <div className="bg-white bg-opacity-20 rounded-circle d-inline-flex p-3 mb-3">
                           <FaStore size={32} className="text-white" />
                         </div>
-                        <h2 className="fw-bold mb-2">Join MarketStore</h2>
+                        <h2 className="fw-bold mb-2">Join DoorMart</h2>
                         <p className="text-white-50">Start your shopping journey today</p>
                       </div>
                       
@@ -520,7 +520,7 @@ function Register() {
                           <FaStore size={24} className="text-white" />
                         </div>
                         <h3 className="fw-bold">Create Account</h3>
-                        <p className="text-muted">Join MarketStore today</p>
+                        <p className="text-muted">Join DoorMart today</p>
                       </div>
 
                       {error && (

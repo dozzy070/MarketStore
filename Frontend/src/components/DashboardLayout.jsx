@@ -254,7 +254,7 @@ function DashboardLayout({ children }) {
               <span className="sidebar-logo-icon">🏪</span>
               {showLabels && (
                 <span className="sidebar-logo-text ms-2">
-                  Market<span className="text-primary">Store</span>
+                  DoorMart
                 </span>
               )}
             </div>

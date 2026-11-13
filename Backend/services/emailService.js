@@ -51,15 +51,15 @@ transporter.verify()
 // =====================
 const emailTemplates = {
   welcome: (name, email, role) => ({
-    subject: `Welcome to MarketStore, ${name}! 🎉`,
+    subject: `Welcome to DoorMart, ${name}! 🎉`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
-          <h1 style="color: white; margin: 0;">MarketStore</h1>
+          <h1 style="color: white; margin: 0;">DoorMart</h1>
         </div>
         <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
           <h2>Welcome, ${name}! 👋</h2>
-          <p>Thank you for joining MarketStore. We're excited to have you on board!</p>
+          <p>Thank you for joining DoorMart. We're excited to have you on board!</p>
           ${role === 'vendor' ? `
             <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #92400e; margin: 0 0 10px 0;">📝 Vendor Application Received</h3>
@@ -84,7 +84,7 @@ const emailTemplates = {
             If you have any questions, feel free to contact our support team.
           </p>
           <p style="color: #6b7280; font-size: 12px; text-align: center;">
-            MarketStore Team
+            DoorMart Team
           </p>
         </div>
       </div>
@@ -96,7 +96,7 @@ const emailTemplates = {
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
-          <h1 style="color: white; margin: 0;">MarketStore</h1>
+          <h1 style="color: white; margin: 0;">DoorMart</h1>
         </div>
         <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
           <h2>Congratulations, ${name}! 🎉</h2>
@@ -114,7 +114,7 @@ const emailTemplates = {
             Go to Vendor Dashboard
           </a>
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
-          <p style="color: #6b7280; font-size: 12px;">Start selling and grow your business with MarketStore!</p>
+          <p style="color: #6b7280; font-size: 12px;">Start selling and grow your business with DoorMart!</p>
         </div>
       </div>
     `,
@@ -125,11 +125,11 @@ const emailTemplates = {
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
-          <h1 style="color: white; margin: 0;">MarketStore</h1>
+          <h1 style="color: white; margin: 0;">DoorMart</h1>
         </div>
         <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
           <h2>Hello ${name},</h2>
-          <p>Thank you for applying to become a vendor at MarketStore.</p>
+          <p>Thank you for applying to become a vendor at DoorMart.</p>
           <div style="background: #fee2e2; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #991b1b; margin: 0 0 10px 0;">📋 Application Status: Not Approved</h3>
             <p style="color: #991b1b; margin: 0;"><strong>Reason:</strong> ${reason || 'Your application did not meet our requirements at this time.'}</p>
@@ -144,16 +144,16 @@ const emailTemplates = {
   }),
 
   loginAlert: (name, email, ip, device, location) => ({
-    subject: `🔐 New Login to Your MarketStore Account`,
+    subject: `🔐 New Login to Your DoorMart Account`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
-          <h1 style="color: white; margin: 0;">MarketStore</h1>
+          <h1 style="color: white; margin: 0;">DoorMart</h1>
         </div>
         <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
           <h2>New Login Detected</h2>
           <p>Hello ${name},</p>
-          <p>We noticed a new login to your MarketStore account.</p>
+          <p>We noticed a new login to your DoorMart account.</p>
           <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin: 0 0 10px 0;">📊 Login Details:</h3>
             <p><strong>📍 IP Address:</strong> ${ip}</p>
@@ -174,11 +174,11 @@ const emailTemplates = {
   }),
 
   passwordReset: (name, resetToken) => ({
-    subject: `Reset Your MarketStore Password`,
+    subject: `Reset Your DoorMart Password`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
-          <h1 style="color: white; margin: 0;">MarketStore</h1>
+          <h1 style="color: white; margin: 0;">DoorMart</h1>
         </div>
         <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
           <h2>Password Reset Request</h2>
@@ -196,15 +196,15 @@ const emailTemplates = {
   }),
 
   passwordChanged: (name) => ({
-    subject: `Your MarketStore Password Has Been Changed`,
+    subject: `Your DoorMart Password Has Been Changed`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
-          <h1 style="color: white; margin: 0;">MarketStore</h1>
+          <h1 style="color: white; margin: 0;">DoorMart</h1>
         </div>
         <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
           <h2>Hello ${name},</h2>
-          <p>Your MarketStore password was successfully changed.</p>
+          <p>Your DoorMart password was successfully changed.</p>
           <p>If you did not make this change, please contact support immediately.</p>
           <a href="${FRONTEND_URL}/support" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 20px;">
             Contact Support
@@ -219,7 +219,7 @@ const emailTemplates = {
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
-          <h1 style="color: white; margin: 0;">MarketStore</h1>
+          <h1 style="color: white; margin: 0;">DoorMart</h1>
         </div>
         <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
           <h2>Payment Confirmed! ✅</h2>
@@ -239,7 +239,7 @@ const emailTemplates = {
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
-          <h1 style="color: white; margin: 0;">MarketStore</h1>
+          <h1 style="color: white; margin: 0;">DoorMart</h1>
         </div>
         <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
           <h2>Payout Update</h2>
@@ -256,7 +256,7 @@ const emailTemplates = {
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
-          <h1 style="color: white; margin: 0;">MarketStore</h1>
+          <h1 style="color: white; margin: 0;">DoorMart</h1>
         </div>
         <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
           <h2>Payout Approved! 🎉</h2>
@@ -273,7 +273,7 @@ const emailTemplates = {
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
-          <h1 style="color: white; margin: 0;">MarketStore</h1>
+          <h1 style="color: white; margin: 0;">DoorMart</h1>
         </div>
         <div style="background: white; padding: 30px; border-radius: 10px; margin-top: 20px;">
           <h2>Payout Update</h2>
@@ -304,7 +304,7 @@ export const sendEmail = async (to, subject, html) => {
 
     console.log('📤 Attempting to send email...');
     const info = await transporter.sendMail({
-      from: `"MarketStore" <${process.env.EMAIL_FROM}>`,
+      from: `"DoorMart" <${process.env.EMAIL_FROM}>`,
       to,
       subject,
       html,

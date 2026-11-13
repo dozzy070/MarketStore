@@ -3,7 +3,6 @@ import { Container, Row, Col, Card, Form, Button, Tab, Nav, Alert, Spinner } fro
 import { 
   FaStore, 
   FaTruck, 
-  FaUndo, 
   FaCreditCard, 
   FaPalette,
   FaSave,
@@ -40,10 +39,6 @@ function StoreSettings() {
     domestic_rate: 2500,
     international_rate: 15000,
     handling_time: '1-2',
-    
-    // Return Settings
-    return_policy: '30-day return policy. Items must be unused and in original packaging.',
-    return_days: 30,
     
     // Payment Settings
     payment_methods: ['Bank Transfer', 'Card Payment'],
@@ -86,8 +81,6 @@ function StoreSettings() {
         domestic_rate: 2500,
         international_rate: 15000,
         handling_time: '1-2',
-        return_policy: '30-day return policy. Items must be unused and in original packaging.',
-        return_days: 30,
         payment_methods: ['Bank Transfer', 'Card Payment', 'PayPal'],
         store_logo: '',
         store_banner: '',
@@ -215,15 +208,6 @@ function StoreSettings() {
                     className="d-flex align-items-center gap-3"
                   >
                     <FaTruck /> Shipping
-                  </Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
-                  <Nav.Link 
-                    active={activeTab === 'returns'} 
-                    onClick={() => setActiveTab('returns')}
-                    className="d-flex align-items-center gap-3"
-                  >
-                    <FaUndo /> Returns
                   </Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
@@ -376,36 +360,6 @@ function StoreSettings() {
                       <option value="2-3">2-3 business days</option>
                       <option value="3-5">3-5 business days</option>
                     </Form.Select>
-                  </Form.Group>
-                </>
-              )}
-
-              {/* Returns Settings */}
-              {activeTab === 'returns' && (
-                <>
-                  <h5 className="mb-4">Return Policy</h5>
-                  
-                  <Form.Group className="mb-3">
-                    <Form.Label>Return Period (days)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="return_days"
-                      value={formData.return_days}
-                      onChange={handleChange}
-                      min="0"
-                      max="365"
-                    />
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label>Return Policy Details</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={4}
-                      name="return_policy"
-                      value={formData.return_policy}
-                      onChange={handleChange}
-                    />
                   </Form.Group>
                 </>
               )}

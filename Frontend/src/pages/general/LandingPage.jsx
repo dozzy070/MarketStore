@@ -6,7 +6,7 @@ import {
   FaStore, FaShoppingCart, FaStar, FaHeart, FaFilter, FaSearch, FaUser,
   FaSignInAlt, FaUserPlus, FaShoppingBag, FaCheckCircle, FaArrowRight,
   FaBars, FaTimes, FaPhone, FaEnvelope, FaMapMarkerAlt, FaFacebook,
-  FaTwitter, FaInstagram, FaTruck, FaShieldAlt, FaUndo, FaHeadset,
+  FaTwitter, FaInstagram, FaTruck, FaShieldAlt, FaHeadset,
   FaExclamationTriangle, FaSync, FaChevronRight, FaChevronLeft,
   FaFire, FaClock, FaRocket, FaPaperPlane, FaGift, FaTag, FaHandsHelping,
   FaBookOpen, FaStoreAlt, FaUserShield, FaAngleRight, FaQuoteLeft
@@ -20,7 +20,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 // Categories from your database
 const CATEGORIES = [
-  { id: 1, name: 'Electronics', image_url: 'https://images.unsplash.com/photo-1498049794561-7780e1231661?w=400', icon: '💻' },
+  { id: 1, name: 'Electronics', image_url: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400', icon: '💻' },
   { id: 2, name: 'Fashion', image_url: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=400', icon: '👕' },
   { id: 3, name: 'Home & Living', image_url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=400', icon: '🏠' },
   { id: 4, name: 'Sports', image_url: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400', icon: '⚽' },
@@ -45,7 +45,7 @@ const CharityModal = ({ show, onHide }) => (
   <Modal show={show} onHide={onHide} size="lg" centered>
     <Modal.Header closeButton className="border-0 pb-0">
       <Modal.Title className="fw-bold">
-        <FaHandsHelping className="text-primary me-2" /> MarketStore Cares
+        <FaHandsHelping className="text-primary me-2" /> DoorMart Cares
       </Modal.Title>
     </Modal.Header>
     <Modal.Body className="pt-0">
@@ -58,7 +58,7 @@ const CharityModal = ({ show, onHide }) => (
         style={{ maxHeight: '300px', objectFit: 'cover', width: '100%' }}
       />
       <p className="lead">Empowering African communities through commerce and giving back.</p>
-      <p>At MarketStore, we believe that every purchase can make a difference. We partner with local charities across Nigeria and Africa to support education, healthcare, and economic empowerment. With every sale, we donate a percentage to initiatives that matter.</p>
+      <p>At DoorMart, we believe that every purchase can make a difference. We partner with local charities across Nigeria and Africa to support education, healthcare, and economic empowerment. With every sale, we donate a percentage to initiatives that matter.</p>
       <h6 className="mt-3">Our Current Initiatives:</h6>
       <ul>
         <li><strong>School Supply Drive</strong> – Providing books and materials to underprivileged children in Lagos.</li>
@@ -103,7 +103,7 @@ const BlogModal = ({ show, onHide }) => {
     <Modal show={show} onHide={onHide} size="lg" centered>
       <Modal.Header closeButton className="border-0 pb-0">
         <Modal.Title className="fw-bold">
-          <FaBookOpen className="text-primary me-2" /> MarketStore Blog
+          <FaBookOpen className="text-primary me-2" /> DoorMart Blog
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -149,7 +149,7 @@ const BecomeVendorModal = ({ show, onHide }) => {
     <Modal show={show} onHide={onHide} size="lg" centered>
       <Modal.Header closeButton className="border-0 pb-0">
         <Modal.Title className="fw-bold">
-          <FaStoreAlt className="text-primary me-2" /> Sell on MarketStore
+          <FaStoreAlt className="text-primary me-2" /> Sell on DoorMart
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -484,7 +484,7 @@ function LandingPage() {
         <Container>
           <Navbar.Brand href="/" className="fw-bold fs-3 d-flex align-items-center">
             <div className="bg-primary text-white p-2 rounded-3 me-2"><FaStore size={20} /></div>
-            <span className="text-dark">Market<span className="text-primary">Store</span></span>
+            <span className="text-dark">DoorMart</span>
           </Navbar.Brand>
 
           {/* Action buttons (always visible) */}
@@ -563,7 +563,6 @@ function LandingPage() {
                 <div className="d-flex gap-4">
                   <div className="d-flex align-items-center"><div className="bg-white bg-opacity-20 rounded-circle p-2 me-2"><FaTruck size={20} /></div><small>Free Shipping</small></div>
                   <div className="d-flex align-items-center"><div className="bg-white bg-opacity-20 rounded-circle p-2 me-2"><FaShieldAlt size={20} /></div><small>Secure Payment</small></div>
-                  <div className="d-flex align-items-center"><div className="bg-white bg-opacity-20 rounded-circle p-2 me-2"><FaUndo size={20} /></div><small>30 Days Return</small></div>
                 </div>
               </Col>
               <Col lg={6}>
@@ -592,10 +591,6 @@ function LandingPage() {
                 <span>Free Shipping on orders over ₦50,000</span>
               </div>
               <div className="ticker-item">
-                <FaUndo className="ticker-icon" />
-                <span>Easy Returns – 30‑day return policy</span>
-              </div>
-              <div className="ticker-item">
                 <FaShieldAlt className="ticker-icon" />
                 <span>Secure Payment – 100% protected</span>
               </div>
@@ -607,10 +602,6 @@ function LandingPage() {
               <div className="ticker-item">
                 <FaTruck className="ticker-icon" />
                 <span>Free Shipping on orders over ₦50,000</span>
-              </div>
-              <div className="ticker-item">
-                <FaUndo className="ticker-icon" />
-                <span>Easy Returns – 30‑day return policy</span>
               </div>
               <div className="ticker-item">
                 <FaShieldAlt className="ticker-icon" />
@@ -1008,7 +999,7 @@ function LandingPage() {
             <Col lg={3} md={6}>
               <div className="d-flex align-items-center mb-3">
                 <div className="bg-primary text-white p-2 rounded-3 me-2"><FaStore size={20} /></div>
-                <h5 className="mb-0">Market<span className="text-primary">Store</span></h5>
+                <h5 className="mb-0">DoorMart</h5>
               </div>
               <p className="text-white-50 mb-3">Your one-stop destination for quality products at great prices.</p>
               <div className="d-flex gap-3">
@@ -1030,7 +1021,6 @@ function LandingPage() {
               <h6 className="fw-bold mb-3">Customer Service</h6>
               <ul className="list-unstyled">
                 <li className="mb-2"><Link to="/help" className="text-white-50 text-decoration-none">Help Center</Link></li>
-                <li className="mb-2"><Link to="/returns" className="text-white-50 text-decoration-none">Returns & Refunds</Link></li>
                 <li className="mb-2"><Link to="/shipping" className="text-white-50 text-decoration-none">Shipping Info</Link></li>
                 <li className="mb-2"><Link to="/track" className="text-white-50 text-decoration-none">Track Order</Link></li>
               </ul>
@@ -1040,13 +1030,13 @@ function LandingPage() {
               <ul className="list-unstyled">
                 <li className="mb-2 d-flex align-items-center"><FaMapMarkerAlt className="me-2 text-primary" /> Lagos, Nigeria</li>
                 <li className="mb-2 d-flex align-items-center"><FaPhone className="me-2 text-primary" /> +234 801 234 5678</li>
-                <li className="mb-2 d-flex align-items-center"><FaEnvelope className="me-2 text-primary" /> support@marketstore.com</li>
+                <li className="mb-2 d-flex align-items-center"><FaEnvelope className="me-2 text-primary" /> support@doormart.com</li>
               </ul>
             </Col>
           </Row>
           <hr className="border-secondary" />
           <div className="text-center">
-            <p className="text-white-50 small mb-0">&copy; {new Date().getFullYear()} MarketStore. All rights reserved.</p>
+            <p className="text-white-50 small mb-0">&copy; {new Date().getFullYear()} DoorMart. All rights reserved.</p>
           </div>
         </Container>
       </footer>

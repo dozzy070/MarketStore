@@ -150,7 +150,7 @@ app.get('/health', async (req, res) => {
 // Root route
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'MarketStore API',
+    message: 'DoorMart API',
     version: '1.0.0',
     status: 'running',
     endpoints: {

@@ -165,7 +165,7 @@ function UserDashboard() {
       setUserData({
         profile: profileData || {
           full_name: user?.full_name || 'Valued Customer',
-          email: user?.email || 'customer@marketstore.com',
+          email: user?.email || 'customer@doormart.com',
           verified: user?.verified || false,
           joinDate: user?.created_at || new Date().toISOString()
         },

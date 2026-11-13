@@ -51,7 +51,7 @@ function AccountHelp() {
               </div>
               <h1 className="display-5 fw-bold mb-3">Account Help</h1>
               <p className="lead text-muted">
-                Everything you need to know about managing your MarketStore account
+                Everything you need to know about managing your DoorMart account
               </p>
             </div>
 

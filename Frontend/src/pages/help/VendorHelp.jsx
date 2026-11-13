@@ -77,7 +77,7 @@ function VendorHelp() {
     },
     {
       question: 'How are returns handled?',
-      answer: 'If a customer requests a return, you\'ll be notified. Review the request and approve if it meets return criteria. The customer will return the item, and once received, you can process the refund or exchange.'
+      answer: 'For return or refund questions, review the order details and contact DoorMart support. Available options can vary by item and seller.'
     },
     {
       question: 'How do I improve my store visibility?',
@@ -108,7 +108,7 @@ function VendorHelp() {
               </div>
               <h1 className="display-5 fw-bold mb-3">Vendor Help</h1>
               <p className="lead text-muted">
-                Everything you need to know about selling on MarketStore
+                Everything you need to know about selling on DoorMart
               </p>
               <Badge bg="success" className="me-2">Apply Now</Badge>
               <Badge bg="info">Vendor Dashboard</Badge>
@@ -234,7 +234,7 @@ function VendorHelp() {
                 <FaCheckCircle size={40} className="mb-3" />
                 <h5>Need Vendor Support?</h5>
                 <p className="mb-3">Our vendor support team is here to help you succeed</p>
-                <Button variant="light" href="mailto:vendors@marketstore.com">
+                <Button variant="light" href="mailto:vendors@doormart.com">
                   Contact Vendor Support
                 </Button>
               </Card.Body>

@@ -15,7 +15,6 @@ import {
   FaLanguage,
   FaCreditCard,
   FaTruck,
-  FaUndo,
   FaUser,
   FaKey
 } from 'react-icons/fa';
@@ -56,7 +55,6 @@ function VendorSettings() {
     domestic_rate: 2500,
     international_rate: 15000,
     handling_time: '1-2',
-    return_policy: '30-day return policy. Items must be unused and in original packaging.',
     shipping_policy: 'Free shipping on orders over ₦50,000. Delivery within 3-5 business days.'
   });
 
@@ -276,15 +274,6 @@ function VendorSettings() {
                 </Nav.Item>
                 <Nav.Item>
                   <Nav.Link 
-                    active={activeTab === 'returns'} 
-                    onClick={() => setActiveTab('returns')}
-                    className="d-flex align-items-center gap-3"
-                  >
-                    <FaUndo /> Returns
-                  </Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
-                  <Nav.Link 
                     active={activeTab === 'notifications'} 
                     onClick={() => setActiveTab('notifications')}
                     className="d-flex align-items-center gap-3"
@@ -494,44 +483,6 @@ function VendorSettings() {
 
                   <Button variant="primary" onClick={handleSaveShipping} disabled={saving}>
                     <FaSave className="me-2" /> Save Shipping Settings
-                  </Button>
-                </Form>
-              </Card.Body>
-            </Card>
-          )}
-
-          {/* Returns Settings */}
-          {activeTab === 'returns' && (
-            <Card className="border-0 shadow-sm">
-              <Card.Header className="bg-white border-0 pt-4">
-                <h5 className="mb-0">Return Policy</h5>
-              </Card.Header>
-              <Card.Body className="p-4">
-                <Form>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Return Period (days)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="return_days"
-                      value={30}
-                      min="0"
-                      max="365"
-                    />
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label>Return Policy Details</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={4}
-                      name="return_policy"
-                      value={shipping.return_policy}
-                      onChange={handleShippingChange}
-                    />
-                  </Form.Group>
-
-                  <Button variant="primary" onClick={handleSaveShipping} disabled={saving}>
-                    <FaSave className="me-2" /> Save Return Policy
                   </Button>
                 </Form>
               </Card.Body>

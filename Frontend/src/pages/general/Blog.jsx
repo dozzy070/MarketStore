@@ -51,7 +51,7 @@ function Blog() {
       fullContent: `
         Nigeria's e‑commerce sector is growing at an unprecedented rate, driven by increasing internet penetration, mobile payments, and a young, tech‑savvy population. 
         <br/><br/>
-        Platforms like MarketStore are empowering small businesses to reach customers beyond their local communities. 
+        Platforms like DoorMart are empowering small businesses to reach customers beyond their local communities.
         <br/><br/>
         However, challenges remain: logistics, trust, and payment security are areas where continuous improvement is needed. 
         <br/><br/>
@@ -117,7 +117,7 @@ function Blog() {
       fullContent: `
         Digital platforms are revolutionising agriculture in Nigeria. Farmers can now sell directly to consumers, cutting out middlemen and earning up to 40% more. 
         <br/><br/>
-        MarketStore's Farm to Market initiative connects small‑scale farmers with urban buyers, ensuring fresh produce reaches tables faster. 
+        DoorMart's Farm to Market initiative connects small‑scale farmers with urban buyers, ensuring fresh produce reaches tables faster.
         <br/><br/>
         <img src="https://images.unsplash.com/photo-1542838132-92c5e80c07f9?w=600" class="img-fluid rounded mb-3" alt="Farming" />
         <br/><br/>
@@ -228,7 +228,7 @@ function Blog() {
       {/* Hero Section */}
       <div className="blog-hero">
         <Container>
-          <h1 className="display-4 fw-bold mb-3">MarketStore Blog</h1>
+          <h1 className="display-4 fw-bold mb-3">DoorMart Blog</h1>
           <p className="lead mb-4">Stories, insights, and trends from the heart of African commerce</p>
           <div className="mx-auto" style={{ maxWidth: '500px' }}>
             <InputGroup>
@@ -367,7 +367,7 @@ function Blog() {
               <Card.Body className="p-4">
                 <h5 className="fw-bold mb-3">About This Blog</h5>
                 <p className="text-muted small">
-                  MarketStore Blog explores the stories, people, and trends shaping African commerce. 
+                  DoorMart Blog explores the stories, people, and trends shaping African commerce.
                   From artisan profiles to e‑commerce insights, we bring you content that informs and inspires.
                 </p>
                 <hr />

@@ -17,7 +17,7 @@ function PaymentsHelp() {
       answer: 'We accept Credit/Debit Cards (Visa, Mastercard, Verve), Bank Transfer, and PayPal. All payments are processed securely through encrypted connections.'
     },
     {
-      question: 'Is it safe to use my credit card on MarketStore?',
+      question: 'Is it safe to use my credit card on DoorMart?',
       answer: 'Yes! We use industry-standard SSL encryption to protect your payment information. We never store your full card details on our servers.'
     },
     {

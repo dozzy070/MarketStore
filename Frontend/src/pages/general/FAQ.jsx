@@ -58,28 +58,11 @@ function FAQ() {
       ]
     },
     {
-      category: 'Returns',
-      questions: [
-        {
-          q: 'What is your return policy?',
-          a: 'We offer a 30-day return policy for most items. Products must be unused and in original packaging.'
-        },
-        {
-          q: 'How do I return an item?',
-          a: 'Go to "My Orders", select the item you want to return, and follow the return instructions.'
-        },
-        {
-          q: 'How long do refunds take?',
-          a: 'Refunds are processed within 5-7 business days after we receive the returned item.'
-        }
-      ]
-    },
-    {
       category: 'Vendors',
       questions: [
         {
           q: 'How do I become a vendor?',
-          a: 'Click on "Sell on MarketStore" in the footer and complete the vendor registration form.'
+          a: 'Click on "Sell on DoorMart" in the footer and complete the vendor registration form.'
         },
         {
           q: 'What are the vendor fees?',

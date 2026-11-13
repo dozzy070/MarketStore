@@ -68,9 +68,9 @@ function AdminSettings() {
       // Mock data
       const mockSettings = {
         // General Settings
-        site_name: 'MarketStore',
+        site_name: 'DoorMart',
         site_description: 'Your one-stop shop for quality products',
-        site_email: 'admin@marketstore.com',
+        site_email: 'admin@doormart.com',
         site_phone: '+234 801 234 5678',
         site_address: 'Lagos, Nigeria',
         timezone: 'Africa/Lagos',
@@ -99,8 +99,8 @@ function AdminSettings() {
         conversion_fee: 1,
         
         // Email Settings
-        sender_email: 'noreply@marketstore.com',
-        sender_name: 'MarketStore',
+        sender_email: 'noreply@doormart.com',
+        sender_name: 'DoorMart',
         email_new_order: true,
         email_vendor_reg: true,
         email_password_reset: true,
@@ -709,7 +709,7 @@ function AdminSettings() {
                     <Form.Control
                       type="email"
                       name="sender_email"
-                      value={formData.sender_email || 'noreply@marketstore.com'}
+                      value={formData.sender_email || 'noreply@doormart.com'}
                       onChange={handleChange}
                     />
                   </Form.Group>
@@ -719,7 +719,7 @@ function AdminSettings() {
                     <Form.Control
                       type="text"
                       name="sender_name"
-                      value={formData.sender_name || 'MarketStore'}
+                      value={formData.sender_name || 'DoorMart'}
                       onChange={handleChange}
                     />
                   </Form.Group>

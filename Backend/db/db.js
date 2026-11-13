@@ -10,7 +10,7 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT) || 28771,
-  database: process.env.DB_NAME || 'MarketStore',
+  database: process.env.DB_NAME || 'DoorMart',
   
   // SSL is required for Aiven
   ssl: {

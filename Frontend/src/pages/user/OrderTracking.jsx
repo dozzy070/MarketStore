@@ -172,7 +172,7 @@ function OrderTracking() {
     if (navigator.share) {
       navigator.share({
         title: `Order ${order?.id}`,
-        text: `Check my order status on MarketStore`,
+        text: `Check my order status on DoorMart`,
         url: window.location.href
       });
     } else {
@@ -182,7 +182,7 @@ function OrderTracking() {
   };
 
   const handleWhatsAppShare = () => {
-    const text = `Check my order ${order?.id} status on MarketStore`;
+    const text = `Check my order ${order?.id} status on DoorMart`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 

@@ -11,7 +11,7 @@ async function generateHash() {
     console.log('Hash:', hash);
     console.log('\nUse this SQL to update/create admin:');
     console.log(
-      `UPDATE users SET password = '${hash}' WHERE email = 'admin@marketstore.com';`
+      `UPDATE users SET password = '${hash}' WHERE email = 'admin@doormart.com';`
     );
 
   } catch (error) {

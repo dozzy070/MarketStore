@@ -17,7 +17,6 @@ import {
   FaUsers,
   FaCheckCircle,
   FaTruck,
-  FaUndo,
   FaCreditCard,
   FaSearch,
   FaHeart,
@@ -67,7 +66,6 @@ function StoreDetails() {
           whatsapp: "+2348012345678"
         },
         shipping_policy: "Free shipping on orders over ₦50,000. Delivery within 2-4 business days in major cities, 3-7 days for other locations.",
-        return_policy: "30-day return policy for unused items in original packaging. Return shipping is free for defective items.",
         payment_methods: ["Bank Transfer", "Card Payment", "PayPal"],
         business_hours: {
           monday: "9:00 AM - 6:00 PM",
@@ -225,15 +223,6 @@ function StoreDetails() {
                         <FaTruck className="text-primary mb-2" size={20} />
                         <h6 className="mb-2">Shipping Policy</h6>
                         <p className="small text-muted mb-0">{store.shipping_policy}</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  <Col md={6}>
-                    <Card className="border-0 bg-light mb-3">
-                      <Card.Body>
-                        <FaUndo className="text-primary mb-2" size={20} />
-                        <h6 className="mb-2">Return Policy</h6>
-                        <p className="small text-muted mb-0">{store.return_policy}</p>
                       </Card.Body>
                     </Card>
                   </Col>

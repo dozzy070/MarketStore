@@ -14,7 +14,7 @@ function TermsConditions() {
           <section className="mb-5">
             <h3>1. Acceptance of Terms</h3>
             <p>
-              By accessing or using the MarketStore website, you agree to be bound by these Terms & Conditions.
+              By accessing or using the DoorMart website, you agree to be bound by these Terms & Conditions.
               If you do not agree, please do not use our services.
             </p>
           </section>
@@ -53,30 +53,23 @@ function TermsConditions() {
           </section>
 
           <section className="mb-5">
-            <h3>6. Returns and Refunds</h3>
+            <h3>6. Intellectual Property</h3>
             <p>
-              Please refer to our <a href="/help/returns">Return Policy</a> for detailed information.
-            </p>
-          </section>
-
-          <section className="mb-5">
-            <h3>7. Intellectual Property</h3>
-            <p>
-              All content on this site (text, graphics, logos, images) is the property of MarketStore
+              All content on this site (text, graphics, logos, images) is the property of DoorMart
               and protected by copyright laws. Unauthorized use is prohibited.
             </p>
           </section>
 
           <section className="mb-5">
-            <h3>8. Limitation of Liability</h3>
+            <h3>7. Limitation of Liability</h3>
             <p>
-              MarketStore is not liable for any indirect, incidental, or consequential damages arising
+              DoorMart is not liable for any indirect, incidental, or consequential damages arising
               from your use of our services.
             </p>
           </section>
 
           <section className="mb-5">
-            <h3>9. Changes to Terms</h3>
+            <h3>8. Changes to Terms</h3>
             <p>
               We may update these Terms from time to time. Continued use of the site after changes
               constitutes acceptance of the new Terms.
@@ -84,10 +77,10 @@ function TermsConditions() {
           </section>
 
           <section className="mb-5">
-            <h3>10. Contact Us</h3>
+            <h3>9. Contact Us</h3>
             <p>
               If you have any questions about these Terms, please contact us at
-              <a href="mailto:support@marketstore.com"> support@marketstore.com</a>.
+              <a href="mailto:support@doormart.com"> support@doormart.com</a>.
             </p>
           </section>
         </Col>

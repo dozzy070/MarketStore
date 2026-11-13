@@ -6,7 +6,7 @@ function AboutUs() {
   return (
     <Container className="py-5">
       <div className="text-center mb-5">
-        <h1 className="display-4 fw-bold mb-3">About MarketStore</h1>
+        <h1 className="display-4 fw-bold mb-3">About DoorMart</h1>
         <p className="lead text-muted">
           Empowering local businesses and connecting shoppers with quality products
         </p>
@@ -16,14 +16,14 @@ function AboutUs() {
         <Col lg={6}>
           <img
             src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800"
-            alt="About MarketStore"
+            alt="About DoorMart"
             className="img-fluid rounded-4 shadow-sm"
           />
         </Col>
         <Col lg={6}>
           <h2 className="h3 mb-3">Our Story</h2>
           <p className="text-muted">
-            MarketStore was founded in 2023 with a simple mission: to create a trusted online marketplace
+            DoorMart was founded in 2023 with a simple mission: to create a trusted online marketplace
             where anyone can discover amazing products and local businesses can thrive.
           </p>
           <p className="text-muted">

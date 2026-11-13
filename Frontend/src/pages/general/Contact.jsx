@@ -62,8 +62,8 @@ function Contact() {
                 </div>
                 <div>
                   <h6 className="mb-1">Email</h6>
-                  <p className="text-muted mb-0">support@marketstore.com</p>
-                  <p className="text-muted">info@marketstore.com</p>
+                  <p className="text-muted mb-0">support@doormart.com</p>
+                  <p className="text-muted">info@doormart.com</p>
                 </div>
               </div>
 

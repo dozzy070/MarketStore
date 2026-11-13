@@ -103,7 +103,7 @@ function Charity() {
   // Testimonials
   const testimonials = [
     {
-      quote: "Thanks to MarketStore's School Supply Drive, my children now have the books they need to succeed in school. I'm so grateful!",
+      quote: "Thanks to DoorMart's School Supply Drive, my children now have the books they need to succeed in school. I'm so grateful!",
       name: "Amina Bello",
       role: "Mother, Lagos",
       image: "https://randomuser.me/api/portraits/women/68.jpg",
@@ -207,7 +207,7 @@ function Charity() {
       {/* Hero Section */}
       <div className="charity-hero">
         <Container>
-          <h1 className="display-3 fw-bold mb-3">MarketStore Cares</h1>
+          <h1 className="display-3 fw-bold mb-3">DoorMart Cares</h1>
           <p className="lead mb-4">Empowering African communities through commerce and giving back.</p>
           <Button variant="light" size="lg" onClick={handleDonate} className="rounded-pill px-4 py-2">
             <FaHandHoldingHeart className="me-2" /> Donate Now
@@ -236,7 +236,7 @@ function Charity() {
           <Col lg={6}>
             <h2 className="display-6 fw-bold mb-3">Every Purchase Makes a Difference</h2>
             <p className="lead">
-              At MarketStore, we believe that commerce can be a force for good. We partner with local charities across Nigeria and Africa to support education, healthcare, and economic empowerment. With every sale, we donate a percentage to initiatives that matter.
+              At DoorMart, we believe that commerce can be a force for good. We partner with local charities across Nigeria and Africa to support education, healthcare, and economic empowerment. With every sale, we donate a percentage to initiatives that matter.
             </p>
             <p>
               Since our founding, we've helped over 5,000 families, built schools in rural communities, and provided technology training to young women. Our commitment to social impact is at the heart of everything we do.

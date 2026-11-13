@@ -55,7 +55,7 @@ function BecomeVendor() {
     {
       name: 'Adaobi Nwosu',
       role: 'Fashion Designer, Lagos',
-      quote: 'Joining MarketStore was the best decision for my business. I’ve reached customers I never thought possible!',
+      quote: 'Joining DoorMart was the best decision for my business. I’ve reached customers I never thought possible!',
       image: 'https://randomuser.me/api/portraits/women/68.jpg',
       rating: 5,
     },
@@ -69,7 +69,7 @@ function BecomeVendor() {
     {
       name: 'Fatima Bello',
       role: 'Organic Farmer, Kaduna',
-      quote: 'MarketStore helped me sell my produce directly to urban buyers. My income has doubled!',
+      quote: 'DoorMart helped me sell my produce directly to urban buyers. My income has doubled!',
       image: 'https://randomuser.me/api/portraits/women/44.jpg',
       rating: 5,
     },
@@ -82,7 +82,7 @@ function BecomeVendor() {
       answer: 'You need a valid business registration (or proof of identity), a bank account for payouts, and products to sell. We’ll guide you through the simple application process.',
     },
     {
-      question: 'How much does it cost to sell on MarketStore?',
+      question: 'How much does it cost to sell on DoorMart?',
       answer: 'There are no monthly fees. We charge a 5% commission on each successful sale. That’s it!',
     },
     {
@@ -140,13 +140,13 @@ function BecomeVendor() {
     'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400', // books
   ];
 
-  // Comparison table (MarketStore vs other platforms)
+  // Comparison table (DoorMart vs other platforms)
   const comparison = [
-    { feature: 'Monthly Fees', marketstore: 'No fees', other: '₦5,000+', highlight: true },
-    { feature: 'Commission Rate', marketstore: '5%', other: '10-20%', highlight: true },
-    { feature: 'Payout Speed', marketstore: 'Weekly', other: 'Bi-weekly', highlight: true },
-    { feature: 'Marketing Support', marketstore: 'Included', other: 'Paid add-on', highlight: true },
-    { feature: 'Customer Support', marketstore: '24/7 Priority', other: 'Email only', highlight: true },
+    { feature: 'Monthly Fees', doormart: 'No fees', other: '₦5,000+', highlight: true },
+    { feature: 'Commission Rate', doormart: '5%', other: '10-20%', highlight: true },
+    { feature: 'Payout Speed', doormart: 'Weekly', other: 'Bi-weekly', highlight: true },
+    { feature: 'Marketing Support', doormart: 'Included', other: 'Paid add-on', highlight: true },
+    { feature: 'Customer Support', doormart: '24/7 Priority', other: 'Email only', highlight: true },
   ];
 
   return (
@@ -199,7 +199,7 @@ function BecomeVendor() {
         <Container>
           <Row className="align-items-center">
             <Col lg={6} className="mb-4 mb-lg-0">
-              <h1 className="display-4 fw-bold mb-3">Sell on MarketStore</h1>
+              <h1 className="display-4 fw-bold mb-3">Sell on DoorMart</h1>
               <p className="lead mb-4">Reach thousands of customers across Nigeria and Africa. Join the fastest‑growing marketplace.</p>
               <Button variant="light" size="lg" onClick={handleStart} className="rounded-pill px-4 py-2">
                 <FaStoreAlt className="me-2" /> Become a Vendor
@@ -322,14 +322,14 @@ function BecomeVendor() {
         </Row>
 
         {/* Comparison Table */}
-        <h2 className="display-6 fw-bold text-center mb-4">MarketStore vs Others</h2>
+        <h2 className="display-6 fw-bold text-center mb-4">DoorMart vs Others</h2>
         <Row className="justify-content-center mb-5">
           <Col lg={8}>
             <Table bordered responsive className="shadow-sm">
               <thead className="bg-light">
                 <tr>
                   <th>Feature</th>
-                  <th className="text-primary">MarketStore</th>
+                  <th className="text-primary">DoorMart</th>
                   <th>Other Platforms</th>
                 </tr>
               </thead>
@@ -337,7 +337,7 @@ function BecomeVendor() {
                 {comparison.map((item, idx) => (
                   <tr key={idx}>
                     <td>{item.feature}</td>
-                    <td className={item.highlight ? 'fw-bold text-success' : ''}>{item.marketstore}</td>
+                    <td className={item.highlight ? 'fw-bold text-success' : ''}>{item.doormart}</td>
                     <td>{item.other}</td>
                   </tr>
                 ))}
@@ -390,14 +390,14 @@ function BecomeVendor() {
         {/* Call to Action */}
         <div className="text-center bg-light p-5 rounded-4 shadow-sm mb-5">
           <h2 className="display-6 fw-bold mb-3">Ready to Start Selling?</h2>
-          <p className="lead mb-4">Join thousands of successful vendors on MarketStore today.</p>
+          <p className="lead mb-4">Join thousands of successful vendors on DoorMart today.</p>
           <Button variant="primary" size="lg" onClick={handleStart} className="rounded-pill px-4 me-3">
             <FaStoreAlt className="me-2" /> Apply Now
           </Button>
           <Button variant="outline-primary" size="lg" onClick={() => setShowContactModal(true)} className="rounded-pill px-4">
             <FaHeadset className="me-2" /> Contact Sales
           </Button>
-          <p className="text-muted mt-4">Or call us: <strong>+234 801 234 5678</strong> | Email: <strong>vendors@marketstore.com</strong></p>
+          <p className="text-muted mt-4">Or call us: <strong>+234 801 234 5678</strong> | Email: <strong>vendors@doormart.com</strong></p>
         </div>
       </Container>
 

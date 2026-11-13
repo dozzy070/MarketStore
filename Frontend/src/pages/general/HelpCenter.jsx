@@ -7,7 +7,6 @@ import {
   FaHeadset, 
   FaFileAlt, 
   FaTruck, 
-  FaUndo, 
   FaCreditCard,
   FaUser,
   FaStore,
@@ -34,7 +33,7 @@ function HelpCenter() {
     {
       id: 1,
       type: 'bot',
-      message: 'Hello! 👋 Welcome to MarketStore Support. How can I help you today?',
+      message: 'Hello! 👋 Welcome to DoorMart Support. How can I help you today?',
       timestamp: new Date()
     }
   ]);
@@ -44,7 +43,6 @@ function HelpCenter() {
   // Quick reply options
   const quickReplies = [
     { text: 'Order Status', action: 'order' },
-    { text: 'Return Policy', action: 'return' },
     { text: 'Shipping Info', action: 'shipping' },
     { text: 'Account Help', action: 'account' },
     { text: 'Vendor Questions', action: 'vendor' },
@@ -59,7 +57,7 @@ function HelpCenter() {
       return "📦 To track your order:\n1. Go to 'My Orders' in your dashboard\n2. Click on the order you want to track\n3. You'll see the tracking number and status\n\nWould you like me to help you with anything else?";
     }
     else if (msg.includes('return') || msg.includes('refund')) {
-      return "🔄 Return Policy:\n- 30-day return window\n- Items must be unused and in original packaging\n- Free return shipping for defective items\n- Refunds processed within 5-7 business days\n\nNeed to start a return? I can help you with that!";
+      return "For return or refund questions, contact the seller through your order details or reach out to DoorMart support. Available options can vary by seller and item.";
     }
     else if (msg.includes('shipping') || msg.includes('delivery')) {
       return "🚚 Shipping Information:\n- Free shipping on orders over ₦50,000\n- Standard delivery: 3-5 business days\n- Express delivery: 1-2 business days\n- International shipping available\n\nWould you like to know shipping cost for your location?";
@@ -74,13 +72,13 @@ function HelpCenter() {
       return "💳 Payment Support:\n- We accept: Credit/Debit Cards, Bank Transfer, PayPal\n- Secure encrypted payments\n- Failed payment? Check card details or try another method\n- Refunds processed within 5-7 business days\n\nNeed help with a specific payment issue?";
     }
     else if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey')) {
-      return "Hello! 😊 I'm your MarketStore support assistant. How can I help you today? You can ask about orders, returns, shipping, or any other questions!";
+      return "Hello! 😊 I'm your DoorMart support assistant. How can I help you today? You can ask about orders, shipping, or any other questions!";
     }
     else if (msg.includes('thank')) {
       return "You're welcome! 😊 Is there anything else I can help you with?";
     }
     else {
-      return "Thank you for reaching out! 📧 For more detailed assistance:\n\n• Email: support@marketstore.com\n• Phone: +234 800 000 0000\n• Live chat with a human agent (click above)\n\nIs there anything specific I can help you with?";
+      return "Thank you for reaching out! 📧 For more detailed assistance:\n\n• Email: support@doormart.com\n• Phone: +234 800 000 0000\n• Live chat with a human agent (click above)\n\nIs there anything specific I can help you with?";
     }
   };
 
@@ -113,7 +111,6 @@ function HelpCenter() {
   const handleQuickReply = (action) => {
     const messages = {
       order: "I need help tracking my order",
-      return: "What's your return policy?",
       shipping: "Tell me about shipping",
       account: "I need help with my account",
       vendor: "I want to become a vendor",
@@ -141,13 +138,6 @@ function HelpCenter() {
       description: 'Track orders, shipping information, and delivery updates',
       path: '/help/orders',
       color: 'success'
-    },
-    {
-      icon: <FaUndo size={30} />,
-      title: 'Returns & Refunds',
-      description: 'Return policy, refund process, and exchanges',
-      path: '/help/returns',
-      color: 'warning'
     },
     {
       icon: <FaCreditCard size={30} />,
@@ -226,9 +216,9 @@ function HelpCenter() {
                 <Button 
                   variant="link" 
                   className="p-0 text-primary"
-                  onClick={() => window.location.href = 'mailto:support@marketstore.com?subject=Support Request'}
+                  onClick={() => window.location.href = 'mailto:support@doormart.com?subject=Support Request'}
                 >
-                  support@marketstore.com
+                  support@doormart.com
                 </Button>
               </Card.Body>
             </Card>
@@ -283,7 +273,7 @@ function HelpCenter() {
         <Modal.Header className="bg-primary text-white">
           <div className="d-flex align-items-center">
             <FaHeadset className="me-2" />
-            <Modal.Title>MarketStore Support</Modal.Title>
+            <Modal.Title>DoorMart Support</Modal.Title>
           </div>
           <Button 
             variant="link" 
