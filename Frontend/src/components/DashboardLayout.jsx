@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   FaTachometerAlt, FaBox, FaUser, FaStore, FaSignOutAlt, FaHistory,
   FaSearch, FaBars, FaCog, FaQuestionCircle, FaMoon, FaSun,
-  FaChevronLeft, FaChevronRight, FaTimes, FaHeart, FaUsers,
+  FaChevronLeft, FaChevronRight, FaTimes, FaUsers,
   FaShoppingCart, FaChartLine, FaStar, FaWallet, FaPlus, FaTags,
   FaShoppingBag, FaShieldAlt, FaExclamationTriangle, FaHome,
   FaCreditCard // Add this import
@@ -174,9 +174,8 @@ function DashboardLayout({ children }) {
   // USER ITEMS - ADDED PAYMENTS LINK
   const userItems = [
     { path: '/user/orders', icon: FaShoppingBag, label: 'My Orders' },
-    { path: '/user/wishlist', icon: FaHeart, label: 'Wishlist' },
     { path: '/user/reviews', icon: FaStar, label: 'My Reviews' },
-    { path: '/user/payments', icon: FaCreditCard, label: 'Payments' }, // Added Payments
+    { path: '/user/payments', icon: FaCreditCard, label: 'Payments' },
   ];
 
   const vendorItems = [

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Nav } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
-import { FaTachometerAlt, FaShoppingBag, FaHeart, FaUser, FaCog, FaStar } from 'react-icons/fa';
+import { FaTachometerAlt, FaShoppingBag, FaUser, FaCog, FaStar } from 'react-icons/fa';
 
 function UserNav() {
   const location = useLocation();
@@ -9,7 +9,6 @@ function UserNav() {
   const navItems = [
     { path: '/user/dashboard', icon: FaTachometerAlt, label: 'Dashboard' },
     { path: '/user/orders', icon: FaShoppingBag, label: 'My Orders' },
-    { path: '/user/wishlist', icon: FaHeart, label: 'Wishlist' },
     { path: '/user/reviews', icon: FaStar, label: 'My Reviews' },
     { path: '/user/profile', icon: FaUser, label: 'Profile' },
     { path: '/user/settings', icon: FaCog, label: 'Settings' },

@@ -1,29 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Image, Form, InputGroup } from 'react-bootstrap';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  FaStore, 
-  FaStar, 
-  FaMapMarkerAlt, 
-  FaEnvelope,
-  FaPhone,
-  FaGlobe,
-  FaFacebook,
-  FaTwitter,
-  FaInstagram,
-  FaWhatsapp,
-  FaBox,
-  FaShoppingBag,
-  FaUsers,
-  FaCheckCircle,
-  FaTruck,
-  FaCreditCard,
-  FaSearch,
-  FaHeart,
-  FaShoppingCart
+import { Container, Row, Col, Card, Button, Badge, Form, InputGroup, Alert, Spinner } from 'react-bootstrap';
+import {
+  FaStore, FaStar, FaMapMarkerAlt, FaEnvelope, FaPhone, FaGlobe,
+  FaFacebook, FaTwitter, FaInstagram, FaWhatsapp, FaBox, FaShoppingBag,
+  FaCheckCircle, FaTruck, FaCreditCard, FaSearch, FaShoppingCart
 } from 'react-icons/fa';
-import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { storeAPI } from '../../services/api';
 
 function StoreDetails() {
   const { id } = useParams();
@@ -32,387 +16,310 @@ function StoreDetails() {
   const [products, setProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [search, setSearch] = useState('');
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
+    const fetchStoreDetails = async () => {
+      setLoading(true);
+      setLoadError('');
+      try {
+        const response = await storeAPI.getStore(id);
+        const storeData = response.data?.data;
+        if (!response.data?.success || !storeData?.store ||
+            !Array.isArray(storeData.products) || !Array.isArray(storeData.reviews)) {
+          throw new Error('The store API returned an invalid response.');
+        }
+
+        setStore(storeData.store);
+        setProducts(storeData.products);
+        setReviews(storeData.reviews);
+      } catch (error) {
+        console.error('Failed to load store details:', error);
+        setStore(null);
+        setProducts([]);
+        setReviews([]);
+        setLoadError(error.response?.data?.message || 'Store details are unavailable. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchStoreDetails();
   }, [id]);
 
-  const fetchStoreDetails = async () => {
-    try {
-      // Mock data - replace with actual API call
-      const mockStore = {
-        id: id,
-        name: "Tech Haven",
-        description: "Your one-stop shop for electronics and gadgets. We offer the latest tech products at competitive prices with excellent customer service.",
-        longDescription: "Founded in 2023, Tech Haven has grown to become one of Nigeria's most trusted electronics retailers. We partner with leading brands to bring you authentic products with full warranties. Our team of tech enthusiasts is always ready to help you find the perfect device for your needs.",
-        logo: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=200",
-        cover: "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=1200",
-        rating: 4.5,
-        totalReviews: 234,
-        products: 156,
-        orders: 2341,
-        customers: 1890,
-        location: "Lagos, Nigeria",
-        address: "123 Tech Avenue, Ikeja, Lagos",
-        email: "contact@techhaven.com",
-        phone: "+234 801 234 5678",
-        website: "https://techhaven.com",
-        verified: true,
-        joined: "2023",
-        social: {
-          facebook: "https://facebook.com/techhaven",
-          twitter: "https://twitter.com/techhaven",
-          instagram: "https://instagram.com/techhaven",
-          whatsapp: "+2348012345678"
-        },
-        shipping_policy: "Free shipping on orders over ₦50,000. Delivery within 2-4 business days in major cities, 3-7 days for other locations.",
-        payment_methods: ["Bank Transfer", "Card Payment", "PayPal"],
-        business_hours: {
-          monday: "9:00 AM - 6:00 PM",
-          tuesday: "9:00 AM - 6:00 PM",
-          wednesday: "9:00 AM - 6:00 PM",
-          thursday: "9:00 AM - 6:00 PM",
-          friday: "9:00 AM - 6:00 PM",
-          saturday: "10:00 AM - 4:00 PM",
-          sunday: "Closed"
-        }
-      };
-
-      const mockProducts = [
-        {
-          id: 1,
-          name: "Wireless Headphones",
-          price: 15000,
-          image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200",
-          rating: 4.5,
-          reviews: 128
-        },
-        {
-          id: 2,
-          name: "Smart Watch",
-          price: 45000,
-          image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200",
-          rating: 4.8,
-          reviews: 89
-        },
-        {
-          id: 3,
-          name: "Bluetooth Speaker",
-          price: 25000,
-          image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=200",
-          rating: 4.6,
-          reviews: 156
-        },
-        {
-          id: 4,
-          name: "Laptop Backpack",
-          price: 12000,
-          image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200",
-          rating: 4.7,
-          reviews: 92
-        }
-      ];
-
-      const mockReviews = [
-        {
-          id: 1,
-          user: "John D.",
-          rating: 5,
-          comment: "Great store! Fast shipping and authentic products.",
-          date: "2024-02-15"
-        },
-        {
-          id: 2,
-          user: "Sarah M.",
-          rating: 4,
-          comment: "Good customer service. Will shop again.",
-          date: "2024-02-10"
-        }
-      ];
-
-      setStore(mockStore);
-      setProducts(mockProducts);
-      setReviews(mockReviews);
-    } catch (error) {
-      console.error('Failed to load store details');
-      toast.error('Failed to load store details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleAddToCart = (product) => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const existing = cart.find(item => item.id === product.id);
-    
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      cart.push({ ...product, quantity: 1 });
+    let cart;
+    try {
+      cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      if (!Array.isArray(cart)) cart = [];
+    } catch (error) {
+      console.error('Could not read the cart from storage:', error);
+      cart = [];
     }
-    
-    localStorage.setItem('cart', JSON.stringify(cart));
+
+    const existing = cart.find(item => item.id === product.id);
+    const updatedCart = existing
+      ? cart.map(item => item.id === product.id ? { ...item, quantity: (item.quantity || 0) + 1 } : item)
+      : [...cart, { ...product, quantity: 1 }];
+
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
     toast.success(`${product.name} added to cart!`);
   };
+
+  const filteredProducts = products.filter(product =>
+    product.name?.toLowerCase().includes(search.toLowerCase())
+  );
+  const businessHours = store?.business_hours && typeof store.business_hours === 'object'
+    ? Object.entries(store.business_hours)
+    : [];
+  const socialMedia = store?.social_media || {};
+  const paymentMethods = Array.isArray(store?.payment_methods) ? store.payment_methods : [];
 
   if (loading) {
     return (
       <Container className="py-5 text-center">
-        <div className="spinner-border text-primary" />
+        <Spinner animation="border" role="status" aria-label="Loading store details" />
+      </Container>
+    );
+  }
+
+  if (!store) {
+    return (
+      <Container className="py-5">
+        <Alert variant="warning">
+          <Alert.Heading>Store unavailable</Alert.Heading>
+          <p className="mb-3">{loadError || 'This store could not be found.'}</p>
+          <Button as={Link} to="/stores" variant="outline-primary">Browse Stores</Button>
+        </Alert>
       </Container>
     );
   }
 
   return (
     <div className="store-details-page">
-      {/* Store Banner */}
-      <div className="position-relative mb-4">
-        <img 
-          src={store.cover} 
-          alt={store.name}
-          className="w-100"
-          style={{ height: '300px', objectFit: 'cover' }}
-        />
-        <div className="position-absolute bottom-0 start-0 w-100 p-4" 
-             style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }}>
-          <Container>
-            <Row className="align-items-end">
-              <Col md={8}>
-                <div className="d-flex align-items-center text-white">
-                  <img 
-                    src={store.logo} 
-                    alt={store.name}
+      <div
+        className="position-relative mb-4 d-flex align-items-end"
+        style={{
+          minHeight: 300,
+          background: store.cover_url
+            ? `linear-gradient(to top, rgba(0,0,0,.8), rgba(0,0,0,.05)), url("${store.cover_url}") center/cover`
+            : 'linear-gradient(135deg, #2563eb 0%, #764ba2 100%)'
+        }}
+      >
+        <Container className="py-4">
+          <Row className="align-items-end">
+            <Col md={8}>
+              <div className="d-flex align-items-center text-white">
+                {store.logo_url ? (
+                  <img
+                    src={store.logo_url}
+                    alt={`${store.name} logo`}
                     className="rounded-circle border border-3 border-white me-3"
-                    style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+                    style={{ width: 80, height: 80, objectFit: 'cover' }}
                   />
-                  <div>
-                    <h2 className="mb-1">{store.name}</h2>
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="d-flex align-items-center">
-                        <FaStar className="text-warning me-1" />
-                        <span>{store.rating} ({store.totalReviews} reviews)</span>
-                      </div>
-                      {store.verified && (
-                        <Badge bg="success">
-                          <FaCheckCircle className="me-1" /> Verified Store
-                        </Badge>
-                      )}
-                    </div>
+                ) : (
+                  <div className="rounded-circle border border-3 border-white me-3 d-flex align-items-center justify-content-center"
+                    style={{ width: 80, height: 80, background: 'rgba(255,255,255,.2)' }}>
+                    <FaStore size={32} />
+                  </div>
+                )}
+                <div>
+                  <h1 className="h2 mb-1">{store.name}</h1>
+                  <div className="d-flex align-items-center gap-3 flex-wrap">
+                    <span><FaStar className="text-warning me-1" />{Number(store.rating) > 0 ? Number(store.rating).toFixed(1) : 'No ratings'} ({store.review_count} reviews)</span>
+                    {store.verified && <Badge bg="success"><FaCheckCircle className="me-1" />Verified Store</Badge>}
                   </div>
                 </div>
-              </Col>
-            </Row>
-          </Container>
-        </div>
+              </div>
+            </Col>
+          </Row>
+        </Container>
       </div>
 
       <Container className="py-4">
+        {loadError && <Alert variant="warning">{loadError}</Alert>}
         <Row>
           <Col lg={8}>
-            {/* About Section */}
             <Card className="border-0 shadow-sm mb-4">
               <Card.Body>
-                <h5 className="mb-3">About {store.name}</h5>
-                <p className="text-muted mb-4">{store.longDescription}</p>
-
-                <h6 className="mb-3">Store Policies</h6>
+                <h2 className="h5 mb-3">About {store.name}</h2>
+                <p className="text-muted mb-4">{store.description || 'This store has not added a description yet.'}</p>
+                <h3 className="h6 mb-3">Store Information</h3>
                 <Row>
                   <Col md={6}>
-                    <Card className="border-0 bg-light mb-3">
+                    <Card className="border-0 bg-light mb-3 h-100">
                       <Card.Body>
                         <FaTruck className="text-primary mb-2" size={20} />
-                        <h6 className="mb-2">Shipping Policy</h6>
-                        <p className="small text-muted mb-0">{store.shipping_policy}</p>
+                        <h4 className="h6 mb-2">Shipping Information</h4>
+                        <p className="small text-muted mb-0">{store.shipping_policy || 'Contact the store for shipping information.'}</p>
                       </Card.Body>
                     </Card>
                   </Col>
-                </Row>
-
-                <h6 className="mb-3">Business Hours</h6>
-                <Row>
                   <Col md={6}>
-                    {Object.entries(store.business_hours).slice(0, 4).map(([day, hours]) => (
-                      <div key={day} className="d-flex justify-content-between mb-2">
-                        <span className="text-capitalize">{day}:</span>
-                        <span className="text-muted">{hours}</span>
-                      </div>
-                    ))}
-                  </Col>
-                  <Col md={6}>
-                    {Object.entries(store.business_hours).slice(4).map(([day, hours]) => (
-                      <div key={day} className="d-flex justify-content-between mb-2">
-                        <span className="text-capitalize">{day}:</span>
-                        <span className="text-muted">{hours}</span>
-                      </div>
-                    ))}
+                    <Card className="border-0 bg-light mb-3 h-100">
+                      <Card.Body>
+                        <h4 className="h6 mb-2">Business Hours</h4>
+                        {businessHours.length ? businessHours.map(([day, hours]) => (
+                          <div key={day} className="d-flex justify-content-between mb-1 small">
+                            <span className="text-capitalize">{day}</span>
+                            <span className="text-muted">{hours}</span>
+                          </div>
+                        )) : <p className="small text-muted mb-0">Hours have not been provided.</p>}
+                      </Card.Body>
+                    </Card>
                   </Col>
                 </Row>
               </Card.Body>
             </Card>
 
-            {/* Products Section */}
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="mb-0">Products ({products.length})</h5>
-              <InputGroup style={{ width: '300px' }}>
+            <div className="d-flex justify-content-between align-items-center gap-3 mb-3">
+              <h2 className="h5 mb-0">Products ({filteredProducts.length})</h2>
+              <InputGroup style={{ maxWidth: 300 }}>
                 <InputGroup.Text><FaSearch /></InputGroup.Text>
                 <Form.Control
+                  aria-label="Search products in store"
                   placeholder="Search in store..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(event) => setSearch(event.target.value)}
                 />
               </InputGroup>
             </div>
 
-            <Row className="g-3 mb-4">
-              {products.map(product => (
-                <Col key={product.id} md={6}>
-                  <Card className="border-0 shadow-sm h-100">
-                    <Row className="g-0">
-                      <Col md={4}>
-                        <Link to={`/product/${product.id}`}>
-                          <Card.Img 
-                            src={product.image} 
-                            style={{ height: '120px', objectFit: 'cover' }}
-                          />
-                        </Link>
-                      </Col>
-                      <Col md={8}>
-                        <Card.Body>
-                          <Link to={`/product/${product.id}`} className="text-decoration-none text-dark">
-                            <Card.Title className="h6">{product.name}</Card.Title>
+            {filteredProducts.length ? (
+              <Row className="g-3 mb-4">
+                {filteredProducts.map(product => (
+                  <Col key={product.id} md={6}>
+                    <Card className="border-0 shadow-sm h-100">
+                      <Row className="g-0">
+                        <Col md={4}>
+                          <Link to={`/product/${product.id}`} aria-label={`View ${product.name}`}>
+                            {product.image_url ? (
+                              <Card.Img src={product.image_url} alt={product.name} style={{ height: 120, objectFit: 'cover' }} />
+                            ) : (
+                              <div className="h-100 bg-light d-flex align-items-center justify-content-center" style={{ minHeight: 120 }}>
+                                <FaBox className="text-muted" size={30} />
+                              </div>
+                            )}
                           </Link>
-                          <div className="d-flex align-items-center mb-2">
-                            <FaStar className="text-warning me-1" size={12} />
-                            <small>{product.rating} ({product.reviews})</small>
-                          </div>
-                          <div className="d-flex justify-content-between align-items-center">
-                            <h6 className="text-primary mb-0">₦{product.price.toLocaleString()}</h6>
-                            <Button 
-                              size="sm" 
-                              variant="outline-primary"
-                              onClick={() => handleAddToCart(product)}
-                            >
-                              <FaShoppingCart />
-                            </Button>
-                          </div>
-                        </Card.Body>
-                      </Col>
-                    </Row>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
+                        </Col>
+                        <Col md={8}>
+                          <Card.Body>
+                            <Link to={`/product/${product.id}`} className="text-decoration-none text-dark">
+                              <Card.Title className="h6">{product.name}</Card.Title>
+                            </Link>
+                            <div className="d-flex align-items-center mb-2">
+                              <FaStar className="text-warning me-1" size={12} />
+                              <small>{Number(product.rating) > 0 ? Number(product.rating).toFixed(1) : 'No ratings'} ({product.review_count} reviews)</small>
+                            </div>
+                            <div className="d-flex justify-content-between align-items-center">
+                              <h3 className="h6 text-primary mb-0">₦{Number(product.price || 0).toLocaleString()}</h3>
+                              <Button
+                                size="sm"
+                                variant="outline-primary"
+                                aria-label={`Add ${product.name} to cart`}
+                                onClick={() => handleAddToCart(product)}
+                                disabled={Number(product.stock_quantity) <= 0}
+                              >
+                                <FaShoppingCart />
+                              </Button>
+                            </div>
+                          </Card.Body>
+                        </Col>
+                      </Row>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            ) : (
+              <p className="text-muted mb-4">
+                {products.length ? 'No products match your search.' : 'This store has no published products yet.'}
+              </p>
+            )}
 
-            {/* Reviews Section */}
-            <h5 className="mb-3">Customer Reviews</h5>
-            {reviews.map(review => (
+            <h2 className="h5 mb-3">Customer Reviews</h2>
+            {reviews.length ? reviews.map(review => (
               <Card key={review.id} className="border-0 shadow-sm mb-3">
                 <Card.Body>
                   <div className="d-flex justify-content-between align-items-start">
                     <div>
-                      <h6 className="mb-1">{review.user}</h6>
+                      <h3 className="h6 mb-1">{review.user_name}</h3>
                       <div className="d-flex align-items-center gap-2 mb-2">
                         <div className="text-warning">
-                          {[...Array(5)].map((_, i) => (
-                            <FaStar key={i} className={i < review.rating ? 'text-warning' : 'text-secondary'} size={12} />
+                          {[...Array(5)].map((_, index) => (
+                            <FaStar key={index} className={index < Number(review.rating) ? 'text-warning' : 'text-secondary'} size={12} />
                           ))}
                         </div>
-                        <small className="text-muted">{review.date}</small>
+                        <small className="text-muted">{new Date(review.created_at).toLocaleDateString()}</small>
                       </div>
                     </div>
                   </div>
                   <p className="mb-0">{review.comment}</p>
                 </Card.Body>
               </Card>
-            ))}
+            )) : <p className="text-muted">This store has no published reviews yet.</p>}
           </Col>
 
           <Col lg={4}>
-            {/* Contact Card */}
             <Card className="border-0 shadow-sm mb-4">
               <Card.Body>
-                <h6 className="mb-3">Contact Information</h6>
-                <div className="mb-3">
-                  <FaMapMarkerAlt className="text-primary me-2" />
-                  <span className="text-muted">{store.address}</span>
-                </div>
-                <div className="mb-3">
-                  <FaEnvelope className="text-primary me-2" />
-                  <a href={`mailto:${store.email}`} className="text-decoration-none">
-                    {store.email}
-                  </a>
-                </div>
-                <div className="mb-3">
-                  <FaPhone className="text-primary me-2" />
-                  <a href={`tel:${store.phone}`} className="text-decoration-none">
-                    {store.phone}
-                  </a>
-                </div>
-                {store.website && (
+                <h2 className="h6 mb-3">Contact Information</h2>
+                {store.location && <div className="mb-3"><FaMapMarkerAlt className="text-primary me-2" /><span className="text-muted">{store.location}</span></div>}
+                {store.email && <div className="mb-3"><FaEnvelope className="text-primary me-2" /><a href={`mailto:${store.email}`} className="text-decoration-none">{store.email}</a></div>}
+                {store.phone && <div className="mb-3"><FaPhone className="text-primary me-2" /><a href={`tel:${store.phone}`} className="text-decoration-none">{store.phone}</a></div>}
+                {store.website_url && (
                   <div className="mb-3">
                     <FaGlobe className="text-primary me-2" />
-                    <a href={store.website} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
-                      {store.website}
+                    <a href={store.website_url.startsWith('http') ? store.website_url : `https://${store.website_url}`} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                      {store.website_url}
                     </a>
                   </div>
                 )}
-                <hr />
-                <h6 className="mb-3">Follow Us</h6>
-                <div className="d-flex gap-3">
-                  {store.social.facebook && (
-                    <a href={store.social.facebook} target="_blank" rel="noopener noreferrer">
-                      <FaFacebook className="text-primary" size={24} />
-                    </a>
-                  )}
-                  {store.social.twitter && (
-                    <a href={store.social.twitter} target="_blank" rel="noopener noreferrer">
-                      <FaTwitter className="text-info" size={24} />
-                    </a>
-                  )}
-                  {store.social.instagram && (
-                    <a href={store.social.instagram} target="_blank" rel="noopener noreferrer">
-                      <FaInstagram className="text-danger" size={24} />
-                    </a>
-                  )}
-                  {store.social.whatsapp && (
-                    <a href={`https://wa.me/${store.social.whatsapp}`} target="_blank" rel="noopener noreferrer">
-                      <FaWhatsapp className="text-success" size={24} />
-                    </a>
-                  )}
-                </div>
+                {Object.values(socialMedia).some(Boolean) && (
+                  <>
+                    <hr />
+                    <h3 className="h6 mb-3">Follow Us</h3>
+                    <div className="d-flex gap-3">
+                      {socialMedia.facebook && <a href={socialMedia.facebook} target="_blank" rel="noopener noreferrer" aria-label="Store Facebook"><FaFacebook className="text-primary" size={24} /></a>}
+                      {socialMedia.twitter && <a href={socialMedia.twitter} target="_blank" rel="noopener noreferrer" aria-label="Store Twitter"><FaTwitter className="text-info" size={24} /></a>}
+                      {socialMedia.instagram && <a href={socialMedia.instagram} target="_blank" rel="noopener noreferrer" aria-label="Store Instagram"><FaInstagram className="text-danger" size={24} /></a>}
+                      {socialMedia.whatsapp && <a href={`https://wa.me/${String(socialMedia.whatsapp).replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" aria-label="Contact store on WhatsApp"><FaWhatsapp className="text-success" size={24} /></a>}
+                    </div>
+                  </>
+                )}
               </Card.Body>
             </Card>
 
-            {/* Stats Card */}
             <Card className="border-0 shadow-sm">
               <Card.Body>
-                <h6 className="mb-3">Store Stats</h6>
+                <h2 className="h6 mb-3">Store Stats</h2>
                 <Row className="g-3">
                   <Col xs={4} className="text-center">
                     <FaBox className="text-primary mb-2" size={24} />
-                    <h6 className="mb-0">{store.products}</h6>
+                    <h3 className="h6 mb-0">{store.product_count}</h3>
                     <small className="text-muted">Products</small>
                   </Col>
                   <Col xs={4} className="text-center">
                     <FaShoppingBag className="text-success mb-2" size={24} />
-                    <h6 className="mb-0">{store.orders.toLocaleString()}</h6>
+                    <h3 className="h6 mb-0">{Number(store.completed_order_count || 0).toLocaleString()}</h3>
                     <small className="text-muted">Orders</small>
                   </Col>
                   <Col xs={4} className="text-center">
-                    <FaUsers className="text-info mb-2" size={24} />
-                    <h6 className="mb-0">{store.customers.toLocaleString()}</h6>
-                    <small className="text-muted">Customers</small>
+                    <FaStar className="text-warning mb-2" size={24} />
+                    <h3 className="h6 mb-0">{store.review_count}</h3>
+                    <small className="text-muted">Reviews</small>
                   </Col>
                 </Row>
                 <hr />
-                <h6 className="mb-3">Payment Methods</h6>
-                <div className="d-flex flex-wrap gap-2">
-                  {store.payment_methods.map(method => (
-                    <Badge key={method} bg="light" text="dark" className="p-2">
-                      <FaCreditCard className="me-1" /> {method}
-                    </Badge>
-                  ))}
-                </div>
+                <h3 className="h6 mb-3">Payment Methods</h3>
+                {paymentMethods.length ? (
+                  <div className="d-flex flex-wrap gap-2">
+                    {paymentMethods.map(method => (
+                      <Badge key={method} bg="light" text="dark" className="p-2">
+                        <FaCreditCard className="me-1" /> {method}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : <p className="small text-muted mb-0">Payment information is provided at checkout.</p>}
               </Card.Body>
             </Card>
           </Col>

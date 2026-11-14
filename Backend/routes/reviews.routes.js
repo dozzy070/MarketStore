@@ -5,6 +5,39 @@ import pool from '../db/db.js';
 
 const router = express.Router();
 
+router.get('/featured', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT
+        r.id,
+        r.rating,
+        r.comment,
+        r.created_at,
+        u.full_name AS user_name,
+        p.name AS product_name
+      FROM reviews r
+      INNER JOIN products p ON p.id = r.product_id
+      INNER JOIN users u ON u.id = r.user_id
+      WHERE r.status = 'approved'
+        AND r.comment IS NOT NULL
+        AND BTRIM(r.comment) <> ''
+      ORDER BY r.created_at DESC
+      LIMIT 3
+    `);
+
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching featured reviews:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch featured reviews'
+    });
+  } finally {
+    client.release();
+  }
+});
+
 // Apply authentication to all routes
 router.use(authenticate);
 

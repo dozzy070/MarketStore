@@ -24,6 +24,8 @@ import paymentRoutes from './routes/payment.routes.js';
 import vendorPayoutRoutes from './routes/vendor/payout.routes.js';
 import adminPayoutRoutes from './routes/admin/payout.routes.js';
 import reviewsRoutes from './routes/reviews.routes.js';
+import newsletterRoutes from './routes/newsletter.routes.js';
+import storesRoutes from './routes/stores.routes.js';
 import passport from './db/passport.js';
 
 import pool from './db/db.js';
@@ -114,6 +116,8 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/vendor/payouts', vendorPayoutRoutes);
 app.use('/api/admin', adminPayoutRoutes);
 app.use('/api/reviews', reviewsRoutes);
+app.use('/api/newsletter', newsletterRoutes);
+app.use('/api/stores', storesRoutes);
 app.use(passport.initialize());
 
 app.get('/test-email', async (req, res) => {
@@ -209,4 +213,3 @@ process.on('SIGINT', async () => {
   console.log('✅ Database connections closed');
   process.exit(0);
 });
-

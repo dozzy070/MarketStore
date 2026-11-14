@@ -12,8 +12,7 @@ import {
   FaBell,
   FaSearch,
   FaBars,
-  FaShoppingCart,
-  FaHeart
+  FaShoppingCart
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
@@ -101,15 +100,6 @@ function SimpleLayout({ children }) {
                     {cartCount}
                   </span>
                 )}
-              </Button>
-
-              {/* Wishlist Icon */}
-              <Button 
-                variant="outline-danger" 
-                className="position-relative"
-                onClick={() => navigate('/wishlist')}
-              >
-                <FaHeart />
               </Button>
 
               {user ? (

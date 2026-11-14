@@ -2,11 +2,99 @@
 import express from 'express';
 import { authenticate } from '../middleware/authMiddleware.js';
 import pool from '../db/db.js';
+import { ensureStoreSchema, getVendorStore } from '../models/store.model.js';
 
 const router = express.Router();
 
 // Apply authentication to all vendor routes
 router.use(authenticate);
+
+router.get('/store', async (req, res) => {
+  let client;
+  try {
+    if (req.user.role !== 'vendor') {
+      return res.status(403).json({ success: false, message: 'Vendor access is required' });
+    }
+
+    await ensureStoreSchema();
+    client = await pool.connect();
+    const store = await getVendorStore(client, req.user.id);
+    if (!store) {
+      return res.status(404).json({ success: false, message: 'Vendor store not found' });
+    }
+
+    res.json({ success: true, data: store });
+  } catch (error) {
+    console.error('Failed to fetch vendor store:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch store' });
+  } finally {
+    client?.release();
+  }
+});
+
+router.put('/store', async (req, res) => {
+  let client;
+  try {
+    if (req.user.role !== 'vendor') {
+      return res.status(403).json({ success: false, message: 'Vendor access is required' });
+    }
+
+    const { store_name: storeName } = req.body;
+    if (typeof storeName !== 'string' || !storeName.trim()) {
+      return res.status(400).json({ success: false, message: 'Store name is required' });
+    }
+
+    await ensureStoreSchema();
+    client = await pool.connect();
+    await client.query(`
+      INSERT INTO vendor_stores (
+        vendor_id, store_name, store_description, store_logo, store_banner,
+        store_email, store_phone, store_address, store_website, social_media,
+        shipping_policy, payment_methods, established, business_hours, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12::jsonb, $13, $14::jsonb, NOW()
+      )
+      ON CONFLICT (vendor_id) DO UPDATE SET
+        store_name = EXCLUDED.store_name,
+        store_description = EXCLUDED.store_description,
+        store_logo = EXCLUDED.store_logo,
+        store_banner = EXCLUDED.store_banner,
+        store_email = EXCLUDED.store_email,
+        store_phone = EXCLUDED.store_phone,
+        store_address = EXCLUDED.store_address,
+        store_website = EXCLUDED.store_website,
+        social_media = EXCLUDED.social_media,
+        shipping_policy = EXCLUDED.shipping_policy,
+        payment_methods = EXCLUDED.payment_methods,
+        established = EXCLUDED.established,
+        business_hours = EXCLUDED.business_hours,
+        updated_at = NOW()
+    `, [
+      req.user.id,
+      storeName.trim(),
+      req.body.store_description || null,
+      req.body.store_logo || null,
+      req.body.store_banner || null,
+      req.body.store_email || null,
+      req.body.store_phone || null,
+      req.body.store_address || null,
+      req.body.store_website || null,
+      JSON.stringify(req.body.social_media || {}),
+      req.body.shipping_policy || null,
+      JSON.stringify(Array.isArray(req.body.payment_methods) ? req.body.payment_methods : []),
+      req.body.established || null,
+      JSON.stringify(req.body.business_hours || {})
+    ]);
+
+    const store = await getVendorStore(client, req.user.id);
+    res.json({ success: true, message: 'Store updated successfully', data: store });
+  } catch (error) {
+    console.error('Failed to update vendor store:', error);
+    res.status(500).json({ success: false, message: 'Failed to update store' });
+  } finally {
+    client?.release();
+  }
+});
 
 /**
  * GET /api/vendor/dashboard/stats

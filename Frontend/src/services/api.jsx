@@ -163,10 +163,20 @@ export const activityAPI = {
 // Review API
 export const reviewAPI = {
   getReviews: (params) => api.get('/reviews', { params }),
+  getFeaturedReviews: () => api.get('/reviews/featured'),
   createReview: (data) => api.post('/reviews', data),
   updateReview: (id, data) => api.put(`/reviews/${id}`, data),
   deleteReview: (id) => api.delete(`/reviews/${id}`),
   reportReview: (id) => api.post(`/reviews/${id}/report`),
+};
+
+export const newsletterAPI = {
+  subscribe: (email) => api.post('/newsletter/subscribe', { email }),
+};
+
+export const storeAPI = {
+  getStores: (params) => api.get('/stores', { params }),
+  getStore: (id) => api.get(`/stores/${id}`),
 };
 
 // Cart API
@@ -197,6 +207,8 @@ export default {
   adminAPI,
   activityAPI,
   reviewAPI,
+  newsletterAPI,
+  storeAPI,
   cartAPI,
   paymentAPI,
 };

@@ -3,7 +3,7 @@ import { Offcanvas, Nav, Image } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   FaHandsHelping, FaBlog, FaStore, FaShieldAlt, FaUserCircle, 
-  FaSignInAlt, FaUserPlus, FaFacebook, FaTwitter, FaInstagram, FaHeart 
+  FaSignInAlt, FaUserPlus, FaFacebook, FaTwitter, FaInstagram
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
@@ -175,7 +175,7 @@ function LandingSidebar({ show, onHide }) {
               </a>
             </div>
             <p className="text-muted small mb-0">
-              <FaHeart className="text-danger" size={12} /> Made with love
+              Shop smarter with DoorMart
             </p>
             <p className="text-muted small mt-1">
               © {new Date().getFullYear()} DoorMart

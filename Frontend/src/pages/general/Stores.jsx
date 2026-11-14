@@ -1,6 +1,6 @@
 // frontend/src/pages/Stores.jsx - With DashboardLayout Sidebar
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, Badge, InputGroup } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, Badge, InputGroup, Alert } from 'react-bootstrap';
 import { 
   FaStore, 
   FaStar, 
@@ -15,19 +15,21 @@ import {
   FaArrowRight
 } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import DashboardLayout from '../../components/DashboardLayout';
+import { storeAPI } from '../../services/api';
 
 function Stores() {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [stats, setStats] = useState({
-    totalStores: 0,
-    verifiedStores: 0,
-    totalProducts: 0,
-    totalOrders: 0
+    total_stores: 0,
+    verified_stores: 0,
+    total_products: 0,
+    total_completed_orders: 0
   });
 
   useEffect(() => {
@@ -35,130 +37,41 @@ function Stores() {
   }, []);
 
   const fetchStores = async () => {
+    setLoading(true);
+    setLoadError('');
     try {
-      // Mock data - replace with actual API call
-      const mockStores = [
-        {
-          id: 1,
-          name: "Tech Haven",
-          description: "Your one-stop shop for electronics and gadgets. We offer the latest smartphones, laptops, accessories, and tech gadgets at competitive prices.",
-          logo: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=200",
-          cover: "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800",
-          rating: 4.5,
-          products: 156,
-          orders: 2341,
-          location: "Lagos, Nigeria",
-          verified: true,
-          joined: "2023",
-          response_time: "2-4 hours",
-          delivery_time: "1-3 days"
-        },
-        {
-          id: 2,
-          name: "Fashion Forward",
-          description: "Trendy clothing and accessories for men and women. Stay stylish with our curated collection of fashion items.",
-          logo: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=200",
-          cover: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800",
-          rating: 4.8,
-          products: 342,
-          orders: 5678,
-          location: "Abuja, Nigeria",
-          verified: true,
-          joined: "2022",
-          response_time: "1-2 hours",
-          delivery_time: "2-4 days"
-        },
-        {
-          id: 3,
-          name: "Home Essentials",
-          description: "Quality home and living products. From furniture to decor, we have everything you need for your home.",
-          logo: "https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=200",
-          cover: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800",
-          rating: 4.3,
-          products: 89,
-          orders: 1234,
-          location: "Port Harcourt, Nigeria",
-          verified: false,
-          joined: "2024",
-          response_time: "3-5 hours",
-          delivery_time: "3-5 days"
-        },
-        {
-          id: 4,
-          name: "Sports World",
-          description: "Everything for your active lifestyle. Get the best sports equipment, activewear, and fitness accessories.",
-          logo: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=200",
-          cover: "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800",
-          rating: 4.6,
-          products: 203,
-          orders: 3456,
-          location: "Ibadan, Nigeria",
-          verified: true,
-          joined: "2023",
-          response_time: "2-3 hours",
-          delivery_time: "2-4 days"
-        },
-        {
-          id: 5,
-          name: "Beauty Bliss",
-          description: "Premium beauty and skincare products. Discover the best brands for your beauty routine.",
-          logo: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=200",
-          cover: "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?w=800",
-          rating: 4.7,
-          products: 178,
-          orders: 2890,
-          location: "Lagos, Nigeria",
-          verified: true,
-          joined: "2023",
-          response_time: "1-3 hours",
-          delivery_time: "2-3 days"
-        },
-        {
-          id: 6,
-          name: "Book Haven",
-          description: "Your favorite bookstore online. Find bestsellers, textbooks, and rare editions.",
-          logo: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=200",
-          cover: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=800",
-          rating: 4.9,
-          products: 456,
-          orders: 6789,
-          location: "Enugu, Nigeria",
-          verified: true,
-          joined: "2022",
-          response_time: "2-5 hours",
-          delivery_time: "3-5 days"
-        }
-      ];
-      
-      setStores(mockStores);
-      
-      // Calculate stats
-      const verifiedStores = mockStores.filter(s => s.verified).length;
-      const totalProducts = mockStores.reduce((sum, s) => sum + s.products, 0);
-      const totalOrders = mockStores.reduce((sum, s) => sum + s.orders, 0);
-      
+      const response = await storeAPI.getStores();
+      if (!response.data?.success || !Array.isArray(response.data.data)) {
+        throw new Error('The stores API returned an invalid response.');
+      }
+
+      setStores(response.data.data);
       setStats({
-        totalStores: mockStores.length,
-        verifiedStores: verifiedStores,
-        totalProducts: totalProducts,
-        totalOrders: totalOrders
+        total_stores: Number(response.data.stats?.total_stores) || 0,
+        verified_stores: Number(response.data.stats?.verified_stores) || 0,
+        total_products: Number(response.data.stats?.total_products) || 0,
+        total_completed_orders: Number(response.data.stats?.total_completed_orders) || 0
       });
-      
     } catch (error) {
-      console.error('Failed to load stores', error);
+      console.error('Failed to load stores:', error);
+      setStores([]);
+      setLoadError('Stores are temporarily unavailable. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const filteredStores = stores.filter(store => {
-    const matchesSearch = store.name.toLowerCase().includes(search.toLowerCase()) ||
-                         store.description.toLowerCase().includes(search.toLowerCase()) ||
-                         store.location.toLowerCase().includes(search.toLowerCase());
+    const searchText = `${store.name || ''} ${store.description || ''} ${store.location || ''}`.toLowerCase();
+    const matchesSearch = searchText.includes(search.toLowerCase());
     
     if (filter === 'verified') return matchesSearch && store.verified;
-    if (filter === 'new') return matchesSearch && store.joined === '2024';
-    if (filter === 'top-rated') return matchesSearch && store.rating >= 4.5;
+    if (filter === 'new') {
+      const joinedDate = new Date(store.joined_date);
+      return matchesSearch && !Number.isNaN(joinedDate.getTime()) &&
+        Date.now() - joinedDate.getTime() <= 30 * 24 * 60 * 60 * 1000;
+    }
+    if (filter === 'top-rated') return matchesSearch && Number(store.rating) >= 4.5;
     
     return matchesSearch;
   });
@@ -166,7 +79,7 @@ function Stores() {
   const formatNumber = (num) => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
+    return Number(num || 0).toString();
   };
 
   if (loading) {
@@ -227,7 +140,7 @@ function Stores() {
                 <Card className="border-0 shadow-sm text-center">
                   <Card.Body>
                     <FaStore size={30} className="text-primary mb-2" />
-                    <h3 className="mb-0">{stats.totalStores}</h3>
+                    <h3 className="mb-0">{stats.total_stores}</h3>
                     <p className="text-muted mb-0">Total Stores</p>
                   </Card.Body>
                 </Card>
@@ -236,7 +149,7 @@ function Stores() {
                 <Card className="border-0 shadow-sm text-center">
                   <Card.Body>
                     <FaCheckCircle size={30} className="text-success mb-2" />
-                    <h3 className="mb-0">{stats.verifiedStores}</h3>
+                    <h3 className="mb-0">{stats.verified_stores}</h3>
                     <p className="text-muted mb-0">Verified Stores</p>
                   </Card.Body>
                 </Card>
@@ -245,7 +158,7 @@ function Stores() {
                 <Card className="border-0 shadow-sm text-center">
                   <Card.Body>
                     <FaBox size={30} className="text-info mb-2" />
-                    <h3 className="mb-0">{formatNumber(stats.totalProducts)}</h3>
+                    <h3 className="mb-0">{formatNumber(stats.total_products)}</h3>
                     <p className="text-muted mb-0">Total Products</p>
                   </Card.Body>
                 </Card>
@@ -254,7 +167,7 @@ function Stores() {
                 <Card className="border-0 shadow-sm text-center">
                   <Card.Body>
                     <FaShoppingBag size={30} className="text-warning mb-2" />
-                    <h3 className="mb-0">{formatNumber(stats.totalOrders)}</h3>
+                    <h3 className="mb-0">{formatNumber(stats.total_completed_orders)}</h3>
                     <p className="text-muted mb-0">Orders Completed</p>
                   </Card.Body>
                 </Card>
@@ -300,6 +213,13 @@ function Stores() {
               </div>
             </div>
 
+            {loadError && (
+              <Alert variant="warning" className="d-flex justify-content-between align-items-center">
+                <span>{loadError}</span>
+                <Button variant="outline-primary" size="sm" onClick={fetchStores}>Try again</Button>
+              </Alert>
+            )}
+
             <Row className="g-4">
               {filteredStores.length === 0 ? (
                 <Col md={12}>
@@ -317,27 +237,39 @@ function Stores() {
               ) : (
                 filteredStores.map((store, index) => (
                   <Col key={store.id} lg={6} xl={4}>
-                    <motion.div
+                    <Motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
                     >
                       <Card className="border-0 shadow-sm h-100 store-card">
                         <div className="position-relative">
-                          <Card.Img 
-                            variant="top" 
-                            src={store.cover} 
-                            style={{ height: '160px', objectFit: 'cover' }}
-                          />
+                          {store.cover_url ? (
+                            <Card.Img
+                              variant="top"
+                              src={store.cover_url}
+                              alt={`${store.name} cover`}
+                              style={{ height: '160px', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <div className="bg-primary bg-opacity-10" style={{ height: '160px' }} />
+                          )}
                           <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-25" />
                           <div className="position-absolute bottom-0 start-0 p-3 text-white">
                             <div className="d-flex align-items-center">
-                              <img 
-                                src={store.logo} 
-                                alt={store.name}
-                                className="rounded-circle border border-2 border-white me-2"
-                                style={{ width: '50px', height: '50px', objectFit: 'cover', background: 'white' }}
-                              />
+                              {store.logo_url ? (
+                                <img
+                                  src={store.logo_url}
+                                  alt={`${store.name} logo`}
+                                  className="rounded-circle border border-2 border-white me-2"
+                                  style={{ width: '50px', height: '50px', objectFit: 'cover', background: 'white' }}
+                                />
+                              ) : (
+                                <div className="rounded-circle border border-2 border-white me-2 d-flex align-items-center justify-content-center bg-primary text-white fw-bold"
+                                  style={{ width: '50px', height: '50px' }}>
+                                  {store.name?.charAt(0)?.toUpperCase() || <FaStore />}
+                                </div>
+                              )}
                               <div>
                                 <h6 className="mb-0 fw-bold">{store.name}</h6>
                                 {store.verified && (
@@ -349,43 +281,43 @@ function Stores() {
                         </div>
                         <Card.Body>
                           <Card.Text className="text-muted small mb-3">
-                            {store.description.length > 100 ? `${store.description.substring(0, 100)}...` : store.description}
+                            {(store.description || '').length > 100 ? `${store.description.substring(0, 100)}...` : store.description}
                           </Card.Text>
                           <div className="d-flex flex-wrap gap-2 mb-3">
                             <div className="d-flex align-items-center">
                               <FaStar className="text-warning me-1" size={12} />
-                              <span className="small fw-medium">{store.rating}</span>
+                              <span className="small fw-medium">{Number(store.rating) > 0 ? Number(store.rating).toFixed(1) : 'No ratings'}</span>
                             </div>
                             <div className="d-flex align-items-center">
                               <FaBox className="text-info me-1" size={12} />
-                              <span className="small">{store.products} products</span>
+                              <span className="small">{store.product_count} products</span>
                             </div>
                             <div className="d-flex align-items-center">
                               <FaShoppingBag className="text-success me-1" size={12} />
-                              <span className="small">{formatNumber(store.orders)} orders</span>
+                              <span className="small">{formatNumber(store.completed_order_count)} orders</span>
                             </div>
                           </div>
-                          <div className="d-flex align-items-center text-muted small mb-3">
-                            <FaMapMarkerAlt className="me-1" size={12} />
-                            {store.location}
-                          </div>
+                          {store.location && (
+                            <div className="d-flex align-items-center text-muted small mb-3">
+                              <FaMapMarkerAlt className="me-1" size={12} />
+                              {store.location}
+                            </div>
+                          )}
                           <div className="d-flex justify-content-between align-items-center mb-3">
-                            <small className="text-muted">
-                              <FaClock className="me-1" size={10} />
-                              Resp: {store.response_time}
-                            </small>
-                            <small className="text-muted">
-                              Delivery: {store.delivery_time}
-                            </small>
+                            {store.joined_date ? (
+                              <small className="text-muted">
+                                <FaClock className="me-1" size={10} />
+                                Joined {new Date(store.joined_date).toLocaleDateString()}
+                              </small>
+                            ) : <span />}
+                            <small className="text-muted">{store.review_count} reviews</small>
                           </div>
-                          <Link to={`/store/${store.id}`}>
-                            <Button variant="primary" className="w-100">
-                              Visit Store <FaArrowRight className="ms-2" size={12} />
-                            </Button>
-                          </Link>
+                              <Button as={Link} to={`/stores/${store.id}`} variant="primary" className="w-100">
+                                Visit Store <FaArrowRight className="ms-2" size={12} />
+                              </Button>
                         </Card.Body>
                       </Card>
-                    </motion.div>
+                    </Motion.div>
                   </Col>
                 ))
               )}

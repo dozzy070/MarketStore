@@ -42,7 +42,7 @@ router.get('/public', async (req, res) => {
     
     if (!tableCheck.rows[0].exists) {
       console.log('Products table does not exist');
-      return res.json({ success: true, products: [] });
+      return res.status(500).json({ success: false, message: 'Product catalog is not initialized' });
     }
     
     // Check which columns exist
@@ -110,7 +110,7 @@ router.get('/public', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error fetching public products:', error);
-    res.json({ success: true, products: [] });
+    res.status(500).json({ success: false, message: 'Failed to fetch public products' });
   } finally {
     client.release();
   }

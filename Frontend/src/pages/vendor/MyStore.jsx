@@ -30,7 +30,6 @@ import {
 import DashboardLayout from '../../components/DashboardLayout';
 import { vendorAPI, productAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
 
 function MyStore() {
   const [error, setError] = useState(null);
@@ -47,8 +46,8 @@ function MyStore() {
   // Store state with default values
   const [store, setStore] = useState({
     id: '',
-    store_name: 'My Store',
-    store_description: 'Welcome to my store!',
+    store_name: '',
+    store_description: '',
     store_logo: '',
     store_banner: '',
     store_email: '',
@@ -61,18 +60,10 @@ function MyStore() {
       instagram: '',
       whatsapp: ''
     },
-    shipping_policy: 'Free shipping on orders over ₦50,000. Delivery within 3-5 business days.',
-    payment_methods: ['Bank Transfer', 'Card Payment'],
-    established: new Date().getFullYear().toString(),
-    business_hours: {
-      monday: '9:00 AM - 6:00 PM',
-      tuesday: '9:00 AM - 6:00 PM',
-      wednesday: '9:00 AM - 6:00 PM',
-      thursday: '9:00 AM - 6:00 PM',
-      friday: '9:00 AM - 6:00 PM',
-      saturday: '10:00 AM - 4:00 PM',
-      sunday: 'Closed'
-    }
+    shipping_policy: '',
+    payment_methods: [],
+    established: '',
+    business_hours: {}
   });
 
   const [formData, setFormData] = useState({ ...store });
@@ -81,7 +72,7 @@ function MyStore() {
     totalProducts: 0,
     totalOrders: 0,
     totalCustomers: 0,
-    averageRating: 4.5,
+    averageRating: 0,
     totalReviews: 0
   });
 
@@ -95,14 +86,13 @@ function MyStore() {
   try {
     console.log('Fetching store data...');
     
-    // Fetch profile data
+    // Fetch store profile data
     let profileData = {};
     try {
-      const profileRes = await vendorAPI.getProfile();
-      // Check if the response has a data property or if it's directly the data
-      profileData = profileRes.data || profileRes || {};
+      const storeRes = await vendorAPI.getStore();
+      profileData = storeRes.data?.data || {};
     } catch (err) {
-      console.warn('Failed to fetch profile:', err);
+      console.warn('Failed to fetch store profile:', err);
     }
 
     // Fetch products - FIX THIS PART
@@ -154,63 +144,47 @@ function MyStore() {
     // Update store state with safe defaults
     setStore({
       id: profileData.id || '',
-      store_name: profileData.store_name || profileData.full_name || 'My Store',
-      store_description: profileData.store_description || 'Welcome to my store!',
+      store_name: profileData.store_name || '',
+      store_description: profileData.store_description || '',
       store_logo: profileData.store_logo || '',
       store_banner: profileData.store_banner || '',
       store_email: profileData.store_email || profileData.email || '',
-      store_phone: profileData.phone_number || '',
-      store_address: profileData.location || '',
-      store_website: profileData.website || '',
+      store_phone: profileData.store_phone || '',
+      store_address: profileData.store_address || '',
+      store_website: profileData.store_website || '',
       social_media: profileData.social_media || {
         facebook: '',
         twitter: '',
         instagram: '',
         whatsapp: ''
       },
-      shipping_policy: profileData.shipping_policy || 'Free shipping on orders over ₦50,000. Delivery within 3-5 business days.',
-      payment_methods: profileData.payment_methods || ['Bank Transfer', 'Card Payment'],
-      established: profileData.established || new Date().getFullYear().toString(),
-      business_hours: profileData.business_hours || {
-        monday: '9:00 AM - 6:00 PM',
-        tuesday: '9:00 AM - 6:00 PM',
-        wednesday: '9:00 AM - 6:00 PM',
-        thursday: '9:00 AM - 6:00 PM',
-        friday: '9:00 AM - 6:00 PM',
-        saturday: '10:00 AM - 4:00 PM',
-        sunday: 'Closed'
-      }
+      shipping_policy: profileData.shipping_policy || '',
+      payment_methods: profileData.payment_methods || [],
+      established: profileData.established || '',
+      business_hours: profileData.business_hours || {}
     });
 
     // Update form data
     setFormData({
       id: profileData.id || '',
-      store_name: profileData.store_name || profileData.full_name || 'My Store',
-      store_description: profileData.store_description || 'Welcome to my store!',
+      store_name: profileData.store_name || '',
+      store_description: profileData.store_description || '',
       store_logo: profileData.store_logo || '',
       store_banner: profileData.store_banner || '',
       store_email: profileData.store_email || profileData.email || '',
-      store_phone: profileData.phone_number || '',
-      store_address: profileData.location || '',
-      store_website: profileData.website || '',
+      store_phone: profileData.store_phone || '',
+      store_address: profileData.store_address || '',
+      store_website: profileData.store_website || '',
       social_media: profileData.social_media || {
         facebook: '',
         twitter: '',
         instagram: '',
         whatsapp: ''
       },
-      shipping_policy: profileData.shipping_policy || 'Free shipping on orders over ₦50,000. Delivery within 3-5 business days.',
-      payment_methods: profileData.payment_methods || ['Bank Transfer', 'Card Payment'],
-      established: profileData.established || new Date().getFullYear().toString(),
-      business_hours: profileData.business_hours || {
-        monday: '9:00 AM - 6:00 PM',
-        tuesday: '9:00 AM - 6:00 PM',
-        wednesday: '9:00 AM - 6:00 PM',
-        thursday: '9:00 AM - 6:00 PM',
-        friday: '9:00 AM - 6:00 PM',
-        saturday: '10:00 AM - 4:00 PM',
-        sunday: 'Closed'
-      }
+      shipping_policy: profileData.shipping_policy || '',
+      payment_methods: profileData.payment_methods || [],
+      established: profileData.established || '',
+      business_hours: profileData.business_hours || {}
     });
 
     // Update products
@@ -221,7 +195,7 @@ function MyStore() {
       totalProducts: statsData.total_products || productsData.length || 0,
       totalOrders: statsData.total_orders || 0,
       totalCustomers: statsData.total_customers || 0,
-      averageRating: statsData.average_rating || 4.5,
+      averageRating: statsData.average_rating || 0,
       totalReviews: statsData.total_reviews || 0
     });
 

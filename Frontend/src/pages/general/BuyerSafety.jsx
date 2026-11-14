@@ -5,7 +5,7 @@ import {
   FaShieldAlt, FaExclamationTriangle, FaPhoneAlt, FaEnvelope, 
   FaQuestionCircle, FaArrowRight, FaFileAlt, FaHandHoldingUsd,
   FaSearch, FaChartLine, FaBoxOpen, FaShoppingBag, FaGlobe,
-  FaClock, FaUserSecret, FaHandSpock
+  FaClock, FaUserSecret, FaHandSpock, FaStar, FaCamera
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -20,7 +20,7 @@ function BuyerSafety() {
     { icon: FaLock, value: '100%', label: 'Encrypted Transactions' },
     { icon: FaUserShield, value: '100%', label: 'Vendor Verification' },
     { icon: FaCheckCircle, value: '99.9%', label: 'Satisfied Buyers' },
-    { icon: FaHandHoldingUsd, value: '30 Days', label: 'Money‑Back Guarantee' },
+    { icon: FaHandHoldingUsd, value: '24/7', label: 'Buyer Support' },
   ];
 
   // Security features
@@ -60,7 +60,7 @@ function BuyerSafety() {
   const faqs = [
     {
       q: 'How does buyer protection work?',
-      a: 'If you receive an item that is significantly different from the description or if the item never arrives, you can file a dispute within 30 days. We’ll investigate and refund your payment if the claim is valid.',
+      a: 'If you receive an item that is significantly different from the description or if the item never arrives, you can open a dispute and our support team will review your case promptly.',
     },
     {
       q: 'What if I receive a damaged item?',
@@ -95,8 +95,8 @@ function BuyerSafety() {
       content: 'If a problem arises, you can open a dispute from your order page. You and the vendor have 7 days to reach a resolution. If not resolved, our support team steps in to mediate. We review all evidence (messages, photos, tracking numbers) and make a fair decision. The process is transparent and free for buyers.',
     },
     {
-      title: '💰 Buyer Protection Guarantee',
-      content: 'You are covered for 30 days after the estimated delivery date. If the item does not arrive, is significantly different from the description, or arrives damaged, we will refund your full purchase price including shipping. The process is simple: submit a claim with supporting evidence. We’ll investigate and resolve within 48 hours.',
+      title: '💰 Buyer Protection',
+      content: 'If an item does not arrive, is significantly different from the description, or arrives damaged, you can raise a case with our support team. We review the evidence, work with the vendor, and help resolve the issue fairly and quickly.',
     },
     {
       title: '🚨 How to Spot Scams',
@@ -214,7 +214,7 @@ function BuyerSafety() {
             <h2 className="display-6 fw-bold mb-3">Our Buyer Protection Promise</h2>
             <p>We’re committed to ensuring every purchase is safe and satisfying. If something goes wrong, we’ve got your back.</p>
             <ul className="list-unstyled">
-              <li className="mb-2"><FaCheckCircle className="text-success me-2" /> <strong>Money‑Back Guarantee:</strong> Full refund if item is not as described or never arrives.</li>
+              <li className="mb-2"><FaCheckCircle className="text-success me-2" /> <strong>Buyer Support:</strong> Our team reviews disputes and helps resolve issues quickly.</li>
               <li className="mb-2"><FaCheckCircle className="text-success me-2" /> <strong>Dispute Resolution:</strong> Our team mediates between buyers and sellers to resolve issues.</li>
               <li className="mb-2"><FaCheckCircle className="text-success me-2" /> <strong>Secure Escrow:</strong> Funds are held until you confirm satisfactory delivery.</li>
             </ul>
