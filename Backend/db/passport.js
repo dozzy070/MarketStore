@@ -3,10 +3,30 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import pool from './db.js';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import dotenv from 'dotenv';
 import { getJwtSecret } from '../utils/jwtSecret.js';
+import { sendWelcomeEmail } from '../services/emailService.js';
 
 dotenv.config(); // Ensure environment variables are loaded
+
+let googleSchemaPromise;
+const ensureGoogleIdentitySchema = () => {
+  if (!googleSchemaPromise) {
+    googleSchemaPromise = pool.query(
+      'ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT'
+    ).then(() => pool.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_unique
+       ON users (google_id)
+       WHERE google_id IS NOT NULL`
+    )).then(() => undefined).catch(error => {
+      googleSchemaPromise = undefined;
+      throw error;
+    });
+  }
+  return googleSchemaPromise;
+};
 
 // Check for required environment variables at startup
 const requiredEnv = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_CALLBACK_URL'];
@@ -45,18 +65,21 @@ passport.use(
       passReqToCallback: true
     },
     async (req, accessToken, refreshToken, profile, done) => {
-      const client = await pool.connect();
+      let client;
+      let transactionStarted = false;
 
       try {
-        console.log('📱 Google Profile received:', profile.displayName, profile.emails?.[0]?.value);
-
         const email = profile.emails?.[0]?.value?.trim().toLowerCase();
         if (!email || profile._json?.email_verified !== true) {
-          console.error('❌ No email found in Google profile');
           return done(null, false);
         }
 
-        const userResult = await client.query(`
+        await ensureGoogleIdentitySchema();
+        client = await pool.connect();
+        await client.query('BEGIN');
+        transactionStarted = true;
+
+        let userResult = await client.query(`
           SELECT u.*, va.status AS vendor_status
           FROM users u
           LEFT JOIN LATERAL (
@@ -66,35 +89,87 @@ passport.use(
             ORDER BY created_at DESC
             LIMIT 1
           ) va ON true
-          WHERE u.email = $1 AND u.google_id = $2
-        `, [email, profile.id]);
+          WHERE u.email = $1
+          FOR UPDATE OF u
+        `, [email]);
 
-        const user = userResult.rows[0];
-        if (!user) return done(null, false);
-        if ((user.role === 'vendor' || user.is_vendor) &&
-            (user.vendor_status === 'rejected' ||
-             (user.vendor_status !== 'approved' && !(user.vendor_status == null && user.verified)))) {
+        let user = userResult.rows[0];
+        let created = false;
+
+        if (!user) {
+          const randomPassword = await bcrypt.hash(randomBytes(32).toString('hex'), 10);
+          userResult = await client.query(`
+            INSERT INTO users (full_name, email, password, google_id, role, is_vendor, verified, avatar, created_at)
+            VALUES ($1, $2, $3, $4, 'user', false, true, $5, NOW())
+            ON CONFLICT (email) DO NOTHING
+            RETURNING *, NULL::text AS vendor_status
+          `, [profile.displayName || email.split('@')[0], email, randomPassword, profile.id, profile.photos?.[0]?.value || null]);
+          user = userResult.rows[0];
+          created = Boolean(user);
+
+          if (!user) {
+            userResult = await client.query(`
+              SELECT u.*, va.status AS vendor_status
+              FROM users u
+              LEFT JOIN LATERAL (
+                SELECT status
+                FROM vendor_applications
+                WHERE user_id = u.id
+                ORDER BY created_at DESC
+                LIMIT 1
+              ) va ON true
+              WHERE u.email = $1
+              FOR UPDATE OF u
+            `, [email]);
+            user = userResult.rows[0];
+          }
+        }
+
+        if (!user || (user.google_id && user.google_id !== profile.id)) {
+          await client.query('ROLLBACK');
+          transactionStarted = false;
           return done(null, false);
         }
 
-        if (!user.avatar && profile.photos?.[0]?.value) {
-          await client.query(
-            'UPDATE users SET avatar = $1, updated_at = NOW() WHERE id = $2',
-            [profile.photos[0].value, user.id]
+        if (!user.google_id || (!user.avatar && profile.photos?.[0]?.value)) {
+          const updatedUser = await client.query(
+            `UPDATE users
+             SET google_id = COALESCE(google_id, $1),
+                 verified = true,
+                 avatar = COALESCE(avatar, $2),
+                 updated_at = NOW()
+             WHERE id = $3
+             RETURNING *`,
+            [profile.id, profile.photos?.[0]?.value || null, user.id]
           );
-          user.avatar = profile.photos[0].value;
+          user = { ...updatedUser.rows[0], vendor_status: user.vendor_status };
         }
 
-        // Generate JWT token and attach to user object
+        if ((user.role === 'vendor' || user.is_vendor) &&
+            (user.vendor_status === 'rejected' ||
+             (user.vendor_status !== 'approved' && !(user.vendor_status == null && user.verified)))) {
+          await client.query('ROLLBACK');
+          transactionStarted = false;
+          return done(null, false);
+        }
+
+        await client.query('COMMIT');
+        transactionStarted = false;
+
+        if (created) {
+          sendWelcomeEmail(user).catch(error => console.error('Google registration welcome email failed:', error));
+        }
+
         const token = generateToken(user);
         user.token = token;
 
         return done(null, user);
       } catch (error) {
-        console.error('❌ Google OAuth Strategy Error:', error);
+        if (transactionStarted) await client.query('ROLLBACK');
+        console.error('Google OAuth strategy error:', error);
         return done(error, null);
       } finally {
-        client.release();
+        client?.release();
       }
     }
   )

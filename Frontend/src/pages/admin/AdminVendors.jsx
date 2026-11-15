@@ -25,7 +25,7 @@ import {
   FaPrint,
   FaArrowRight
 } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { adminAPI } from '../../services/api';
 import toast from 'react-hot-toast';
@@ -33,11 +33,12 @@ import notificationService from '../../services/notificationService';
 
 function AdminVendors() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [vendors, setVendors] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const statusFilter = searchParams.get('filter') || 'all';
   const [showDetails, setShowDetails] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [processingId, setProcessingId] = useState(null);
@@ -294,7 +295,7 @@ function AdminVendors() {
 
   const clearFilters = () => {
     setSearch('');
-    setStatusFilter('all');
+    setSearchParams({}, { replace: true });
   };
 
   return (
@@ -415,7 +416,10 @@ function AdminVendors() {
                   <InputGroup.Text><FaFilter /></InputGroup.Text>
                   <Form.Select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => {
+                      const nextFilter = e.target.value;
+                      setSearchParams(nextFilter === 'all' ? {} : { filter: nextFilter });
+                    }}
                   >
                     <option value="all">All Status</option>
                     <option value="approved">Approved</option>

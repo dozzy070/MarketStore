@@ -3,10 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 function GoogleCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { completeLogin } = useAuth();
 
   useEffect(() => {
     const completeGoogleLogin = async () => {
@@ -23,7 +25,6 @@ function GoogleCallback() {
       }
 
       try {
-        localStorage.setItem('token', token);
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
         const response = await axios.get(`${API_URL}/auth/verify`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -33,7 +34,7 @@ function GoogleCallback() {
           throw new Error('Unable to verify Google login');
         }
 
-        localStorage.setItem('user', JSON.stringify(user));
+        completeLogin(token, user);
         toast.success(`Welcome, ${user.full_name}!`);
         navigate(user.role === 'admin'
           ? '/admin/dashboard'
@@ -49,7 +50,7 @@ function GoogleCallback() {
     };
 
     void completeGoogleLogin();
-  }, [navigate, searchParams]);
+  }, [completeLogin, navigate, searchParams]);
 
   return (
     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>

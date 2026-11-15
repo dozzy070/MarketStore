@@ -1,60 +1,19 @@
-// backend/routes/order.routes.js - Complete fixed version
+// backend/routes/order.routes.js
 import express from 'express';
 import { authenticate } from '../middleware/authMiddleware.js';
 import pool from '../db/db.js';
+import { ensureStoreSchema } from '../models/store.model.js';
 
 const router = express.Router();
 
-// Mock order data for string IDs
-const mockOrders = {
-  'ORD-2024-001': {
-    id: 'ORD-2024-001',
-    user_id: 1,
-    total: 21997,
-    status: 'delivered',
-    payment_status: 'paid',
-    shipping_address: '123 Main Street, Ikeja, Lagos',
-    shipping_method: 'Standard Shipping',
-    tracking_number: 'TRK123456789',
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    items: [
-      { id: 1, product_id: 101, product_name: 'Premium Wireless Headphones', quantity: 1, price: 15999, image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200' },
-      { id: 2, product_id: 102, product_name: 'Phone Case', quantity: 2, price: 2999, image_url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=200' }
-    ]
-  },
-  'ORD-2024-002': {
-    id: 'ORD-2024-002',
-    user_id: 1,
-    total: 27999,
-    status: 'shipped',
-    payment_status: 'paid',
-    shipping_address: '123 Main Street, Ikeja, Lagos',
-    shipping_method: 'Express Shipping',
-    tracking_number: 'TRK987654321',
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    items: [
-      { id: 3, product_id: 103, product_name: 'Performance Running Shoes', quantity: 1, price: 27999, image_url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200' }
-    ]
-  },
-  'ORD-2024-003': {
-    id: 'ORD-2024-003',
-    user_id: 1,
-    total: 13997,
-    status: 'processing',
-    payment_status: 'paid',
-    shipping_address: '123 Main Street, Ikeja, Lagos',
-    shipping_method: 'Standard Shipping',
-    tracking_number: null,
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now()).toISOString(),
-    items: [
-      { id: 4, product_id: 104, product_name: 'Premium Yoga Mat', quantity: 1, price: 8999, image_url: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=200' },
-      { id: 5, product_id: 105, product_name: 'Stainless Steel Water Bottle', quantity: 2, price: 2499, image_url: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=200' }
-    ]
-  }
+const parseOrderId = value => {
+  const match = /^(?:ORD-2024-)?(\d+)$/.exec(String(value));
+  if (!match) return null;
+  const id = Number(match[1]);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
 };
+
+const formatOrderId = id => `ORD-2024-${String(id).padStart(3, '0')}`;
 
 // Get all orders for authenticated user
 router.get('/', authenticate, async (req, res) => {
@@ -101,7 +60,7 @@ router.get('/', authenticate, async (req, res) => {
     // Convert numeric IDs to string format for frontend
     const ordersWithStringIds = result.rows.map(order => ({
       ...order,
-      id: `ORD-2024-${String(order.id).padStart(3, '0')}`
+      id: formatOrderId(order.id)
     }));
     
     res.json({ 
@@ -111,65 +70,22 @@ router.get('/', authenticate, async (req, res) => {
     
   } catch (error) {
     console.error('❌ Get orders error:', error);
-    // Return mock data on error
-    res.json({ 
-      success: true, 
-      data: Object.values(mockOrders) 
-    });
+    res.status(500).json({ success: false, message: 'Failed to fetch orders' });
   } finally {
     if (client) client.release();
   }
 });
 
-// Get single order by ID - FIXED - Always returns data, never fails
+// Get a single order owned by the authenticated user
 router.get('/:id', authenticate, async (req, res) => {
   const { id } = req.params;
-  console.log(`🔍 Fetching order for ID: ${id}, User: ${req.user.id}`);
-  
-  // Check if it's a string ID (like ORD-2024-003) or numeric
-  const isStringId = id.includes('ORD-');
-  
-  if (isStringId) {
-    // Return mock data for string IDs
-    const orderData = mockOrders[id];
-    if (orderData) {
-      console.log(`✅ Returning mock order: ${id}`);
-      return res.json({
-        success: true,
-        data: orderData
-      });
-    } else {
-      // Create a default mock order if not found
-      console.log(`⚠️ Mock order not found, creating default for: ${id}`);
-      return res.json({
-        success: true,
-        data: {
-          id: id,
-          user_id: req.user.id,
-          total: 15999,
-          status: 'pending',
-          payment_status: 'pending',
-          shipping_address: '123 Main Street, Ikeja, Lagos',
-          shipping_method: 'Standard Shipping',
-          tracking_number: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          items: [
-            { id: 1, product_id: 101, product_name: 'Sample Product', quantity: 1, price: 15999, image_url: null }
-          ]
-        }
-      });
-    }
+  const numericId = parseOrderId(id);
+  if (!numericId) {
+    return res.status(400).json({ success: false, message: 'Invalid order ID' });
   }
-  
-  // Handle numeric IDs from database
+
   let client;
   try {
-    const numericId = parseInt(id);
-    if (isNaN(numericId)) {
-      throw new Error('Invalid order ID');
-    }
-    
     client = await pool.connect();
     
     const result = await client.query(
@@ -206,30 +122,11 @@ router.get('/:id', authenticate, async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      console.log(`❌ Order ${id} not found, using mock data`);
-      return res.json({
-        success: true,
-        data: {
-          id: `ORD-2024-${String(id).padStart(3, '0')}`,
-          user_id: req.user.id,
-          total: 15999,
-          status: 'pending',
-          payment_status: 'pending',
-          shipping_address: '123 Main Street, Ikeja, Lagos',
-          shipping_method: 'Standard Shipping',
-          tracking_number: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          items: []
-        }
-      });
+      return res.status(404).json({ success: false, message: 'Order not found' });
     }
     
     const orderData = result.rows[0];
-    // Convert to string ID format
-    orderData.id = `ORD-2024-${String(orderData.id).padStart(3, '0')}`;
-    
-    console.log(`✅ Order ${id} found`);
+    orderData.id = formatOrderId(orderData.id);
     res.json({ 
       success: true, 
       data: orderData 
@@ -237,25 +134,7 @@ router.get('/:id', authenticate, async (req, res) => {
     
   } catch (error) {
     console.error('❌ Get order error:', error);
-    // Always return mock data on error
-    res.json({
-      success: true,
-      data: {
-        id: id,
-        user_id: req.user.id,
-        total: 15999,
-        status: 'pending',
-        payment_status: 'pending',
-        shipping_address: '123 Main Street, Ikeja, Lagos',
-        shipping_method: 'Standard Shipping',
-        tracking_number: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        items: [
-          { id: 1, product_id: 101, product_name: 'Sample Product', quantity: 1, price: 15999, image_url: null }
-        ]
-      }
-    });
+    res.status(500).json({ success: false, message: 'Failed to fetch order' });
   } finally {
     if (client) client.release();
   }
@@ -264,63 +143,174 @@ router.get('/:id', authenticate, async (req, res) => {
 // Create new order
 router.post('/', authenticate, async (req, res) => {
   let client;
+  let transactionStarted = false;
   try {
-    const { items, total, shipping_address, shipping_method, payment_method } = req.body;
-    
-    if (!items || !items.length) {
+    const { items, shipping_address } = req.body;
+    const shippingMethod = req.body.shipping_method || shipping_address?.method || 'standard';
+    const shippingFees = { standard: 2500, express: 5000, pickup: 0 };
+
+    if (!Array.isArray(items) || items.length === 0 || !shipping_address || typeof shipping_address !== 'object') {
       return res.status(400).json({
         success: false,
-        message: 'No items in order'
+        message: 'A shipping address and at least one item are required'
       });
     }
-    
+
+    const requiredShippingFields = ['fullName', 'email', 'phone', 'address', 'city', 'state'];
+    if (requiredShippingFields.some(field =>
+      typeof shipping_address[field] !== 'string' ||
+      !shipping_address[field].trim() ||
+      shipping_address[field].length > 250
+    ) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shipping_address.email)) {
+      return res.status(400).json({ success: false, message: 'Shipping information is incomplete or invalid' });
+    }
+    const safeShippingAddress = Object.fromEntries(
+      [...requiredShippingFields, 'apartment', 'zipCode', 'country'].map(field => [
+        field,
+        typeof shipping_address[field] === 'string' ? shipping_address[field].trim().slice(0, 250) : ''
+      ])
+    );
+    safeShippingAddress.method = shippingMethod;
+
+    if (!Object.hasOwn(shippingFees, shippingMethod)) {
+      return res.status(400).json({ success: false, message: 'Invalid shipping method' });
+    }
+
+    const quantityByProduct = new Map();
+    for (const item of items) {
+      const productId = Number(item?.product_id);
+      const quantity = Number(item?.quantity);
+      if (!Number.isSafeInteger(productId) || productId <= 0 ||
+          !Number.isSafeInteger(quantity) || quantity <= 0) {
+        return res.status(400).json({ success: false, message: 'Invalid product or quantity' });
+      }
+      const combinedQuantity = (quantityByProduct.get(productId) || 0) + quantity;
+      if (!Number.isSafeInteger(combinedQuantity)) {
+        return res.status(400).json({ success: false, message: 'Product quantity is too large' });
+      }
+      quantityByProduct.set(productId, combinedQuantity);
+    }
+
+    await ensureStoreSchema();
     client = await pool.connect();
-    
     await client.query('BEGIN');
-    
-    // Create order
+    transactionStarted = true;
+
+    const productColumnsResult = await client.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'products' AND column_name IN ('published', 'status')`
+    );
+    const productColumns = new Set(productColumnsResult.rows.map(row => row.column_name));
+    const visibilityFilters = [];
+    if (productColumns.has('published')) visibilityFilters.push('COALESCE(p.published, true) = true');
+    if (productColumns.has('status')) visibilityFilters.push("COALESCE(p.status, 'published') = 'published'");
+
+    const productResult = await client.query(
+      `SELECT p.id, p.name, p.price, p.stock_quantity
+       FROM products p
+       INNER JOIN vendor_stores vs ON vs.vendor_id = p.vendor_id AND vs.status = 'active'
+       INNER JOIN users u ON u.id = p.vendor_id AND (u.role = 'vendor' OR u.is_vendor = true)
+       LEFT JOIN LATERAL (
+         SELECT status
+         FROM vendor_applications
+         WHERE user_id = u.id
+         ORDER BY created_at DESC
+         LIMIT 1
+       ) va ON true
+       WHERE p.id = ANY($1)
+         AND COALESCE(va.status, CASE WHEN u.verified THEN 'approved' ELSE 'pending' END) = 'approved'
+         ${visibilityFilters.length ? `AND ${visibilityFilters.join(' AND ')}` : ''}
+       FOR UPDATE OF p`,
+      [[...quantityByProduct.keys()]]
+    );
+    if (productResult.rows.length !== quantityByProduct.size) {
+      await client.query('ROLLBACK');
+      transactionStarted = false;
+      return res.status(409).json({ success: false, message: 'One or more products are no longer available' });
+    }
+
+    const productsById = new Map(productResult.rows.map(product => [Number(product.id), product]));
+    let subtotal = 0;
+    for (const [productId, quantity] of quantityByProduct) {
+      const product = productsById.get(productId);
+      const price = Number(product.price);
+      const availableStock = Number(product.stock_quantity);
+      if (!Number.isFinite(price) || price < 0 ||
+          !Number.isSafeInteger(availableStock) || availableStock < quantity) {
+        await client.query('ROLLBACK');
+        transactionStarted = false;
+        return res.status(409).json({ success: false, message: 'Product price or stock changed. Please review your cart.' });
+      }
+      subtotal += price * quantity;
+    }
+
+    subtotal = Math.round(subtotal * 100) / 100;
+    const tax = Math.round(subtotal * 0.075 * 100) / 100;
+    const total = Math.round((subtotal + shippingFees[shippingMethod] + tax) * 100) / 100;
+    if (total < 100) {
+      await client.query('ROLLBACK');
+      transactionStarted = false;
+      return res.status(400).json({ success: false, message: 'Order total must be at least ₦100' });
+    }
+    const expectedTotalInKobo = Math.round(Number(req.body.total) * 100);
+    if (!Number.isSafeInteger(expectedTotalInKobo) ||
+        Math.abs(Number(req.body.total) * 100 - expectedTotalInKobo) >= 0.000001 ||
+        expectedTotalInKobo !== Math.round(total * 100)) {
+      await client.query('ROLLBACK');
+      transactionStarted = false;
+      return res.status(409).json({
+        success: false,
+        message: 'Product prices or order costs changed. Please review your cart and try again.'
+      });
+    }
+
     const orderResult = await client.query(
       `INSERT INTO orders (user_id, total, shipping_address, shipping_method, status, payment_status, created_at)
        VALUES ($1, $2, $3, $4, 'pending', 'pending', NOW())
        RETURNING id`,
-      [req.user.id, total, shipping_address, shipping_method]
+      [req.user.id, total, safeShippingAddress, shippingMethod]
     );
     
     const orderId = orderResult.rows[0].id;
     const orderNumber = `ORD-2024-${String(orderId).padStart(3, '0')}`;
     
-    // Create order items
-    for (const item of items) {
+    for (const [productId, quantity] of quantityByProduct) {
+      const product = productsById.get(productId);
+      const price = Number(product.price);
       await client.query(
         `INSERT INTO order_items (order_id, product_id, quantity, price)
          VALUES ($1, $2, $3, $4)`,
-        [orderId, item.product_id, item.quantity, item.price]
+        [orderId, productId, quantity, price]
       );
       
-      // Update product stock
-      await client.query(
+      const stockUpdate = await client.query(
         `UPDATE products 
          SET stock_quantity = stock_quantity - $1
-         WHERE id = $2 AND stock_quantity >= $1`,
-        [item.quantity, item.product_id]
+         WHERE id = $2 AND stock_quantity >= $1
+         RETURNING id`,
+        [quantity, productId]
       );
+      if (stockUpdate.rowCount !== 1) {
+        throw new Error('Product stock changed while placing the order');
+      }
     }
     
     await client.query('COMMIT');
+    transactionStarted = false;
     
     res.status(201).json({
       success: true,
       message: 'Order created successfully',
-      data: { orderId, orderNumber }
+      data: { orderId, id: orderId, orderNumber, subtotal, shipping: shippingFees[shippingMethod], tax, total }
     });
     
   } catch (error) {
-    if (client) await client.query('ROLLBACK');
+    if (transactionStarted && client) await client.query('ROLLBACK');
     console.error('❌ Create order error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to create order',
-      error: error.message 
+      message: 'Failed to create order'
     });
   } finally {
     if (client) client.release();
@@ -328,11 +318,15 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Update order status
-router.patch('/:id/status', authenticate, async (req, res) => {
+router.put('/:id/status', authenticate, async (req, res) => {
   let client;
   try {
     const { id } = req.params;
     const { status } = req.body;
+
+    if (req.user.role !== 'admin' && !req.user.is_admin) {
+      return res.status(403).json({ success: false, message: 'Only administrators can update order status' });
+    }
     
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
     if (!validStatuses.includes(status)) {
@@ -342,32 +336,17 @@ router.patch('/:id/status', authenticate, async (req, res) => {
       });
     }
     
-    // Handle string IDs
-    if (id.includes('ORD-')) {
-      // For mock orders, just return success
-      return res.json({
-        success: true,
-        message: 'Order status updated (demo)',
-        data: { id, status }
-      });
-    }
-    
-    const numericId = parseInt(id);
-    if (isNaN(numericId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid order ID format'
-      });
-    }
+    const numericId = parseOrderId(id);
+    if (!numericId) return res.status(400).json({ success: false, message: 'Invalid order ID' });
     
     client = await pool.connect();
     
     const result = await client.query(
       `UPDATE orders 
        SET status = $1, updated_at = NOW()
-       WHERE id = $2 AND user_id = $3
+       WHERE id = $2
        RETURNING *`,
-      [status, numericId, req.user.id]
+      [status, numericId]
     );
     
     if (result.rows.length === 0) {
@@ -398,46 +377,38 @@ router.patch('/:id/status', authenticate, async (req, res) => {
 // Cancel order
 router.post('/:id/cancel', authenticate, async (req, res) => {
   let client;
+  let transactionStarted = false;
   try {
     const { id } = req.params;
-    
-    // Handle string IDs
-    if (id.includes('ORD-')) {
-      return res.json({
-        success: true,
-        message: 'Order cancelled (demo)'
-      });
-    }
-    
-    const numericId = parseInt(id);
-    if (isNaN(numericId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid order ID format'
-      });
-    }
+    const numericId = parseOrderId(id);
+    if (!numericId) return res.status(400).json({ success: false, message: 'Invalid order ID' });
     
     client = await pool.connect();
     
     await client.query('BEGIN');
+    transactionStarted = true;
     
     // Check if order can be cancelled
     const orderCheck = await client.query(
-      `SELECT status FROM orders WHERE id = $1 AND user_id = $2`,
+      `SELECT status, payment_status FROM orders WHERE id = $1 AND user_id = $2 FOR UPDATE`,
       [numericId, req.user.id]
     );
     
     if (orderCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      transactionStarted = false;
       return res.status(404).json({
         success: false,
         message: 'Order not found'
       });
     }
     
-    if (orderCheck.rows[0].status !== 'pending') {
+    if (orderCheck.rows[0].status !== 'pending' || orderCheck.rows[0].payment_status !== 'pending') {
+      await client.query('ROLLBACK');
+      transactionStarted = false;
       return res.status(400).json({
         success: false,
-        message: 'Only pending orders can be cancelled'
+        message: 'Only unpaid pending orders can be cancelled'
       });
     }
     
@@ -459,11 +430,14 @@ router.post('/:id/cancel', authenticate, async (req, res) => {
     
     // Update order status
     await client.query(
-      `UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = $1`,
-      [numericId]
+      `UPDATE orders
+       SET status = 'cancelled', updated_at = NOW()
+       WHERE id = $1 AND user_id = $2 AND status = 'pending' AND payment_status = 'pending'`,
+      [numericId, req.user.id]
     );
     
     await client.query('COMMIT');
+    transactionStarted = false;
     
     res.json({
       success: true,
@@ -471,12 +445,11 @@ router.post('/:id/cancel', authenticate, async (req, res) => {
     });
     
   } catch (error) {
-    if (client) await client.query('ROLLBACK');
+    if (transactionStarted && client) await client.query('ROLLBACK');
     console.error('❌ Cancel order error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to cancel order',
-      error: error.message 
+      message: 'Failed to cancel order'
     });
   } finally {
     if (client) client.release();

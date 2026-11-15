@@ -76,6 +76,25 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.sidebar-header-collapsed {
+  padding: 16px 8px;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.sidebar-brand-logo {
+  display: block;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
 .sidebar-logo-icon {
   font-size: 28px;
   color: var(--primary);

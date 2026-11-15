@@ -7,7 +7,7 @@ import {
   FaStar, FaCog, FaCheck, FaTimes, FaList, FaHistory,
   FaComment, FaSync, FaArrowRight, FaTrash
 } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { adminAPI } from '../../services/api';
 import { Line, Doughnut } from 'react-chartjs-2';
@@ -23,7 +23,7 @@ import {
   Filler,
   ArcElement
 } from 'chart.js';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 ChartJS.register(
@@ -39,7 +39,6 @@ ChartJS.register(
 );
 
 function AdminDashboard() {
-  const navigate = useNavigate();
   const [refreshing, setRefreshing] = useState(false); // only for manual refresh button (disabled state)
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -68,20 +67,20 @@ function AdminDashboard() {
 
   // Fetch admin data
   // @param showToast - whether to show success/error toast
-  // @param silent - if true, do not show refresh button spinner
-  const fetchAdminData = async (showToast = false, silent = false) => {
+  const fetchAdminData = async (showToast = false) => {
     if (showToast) setRefreshing(true);
 
     try {
       const [
-        usersRes, vendorsRes, productsRes, reviewsRes, categoriesRes, revenueRes
+        usersRes, vendorsRes, productsRes, reviewsRes, categoriesRes, revenueRes, dashboardStatsRes
       ] = await Promise.allSettled([
         adminAPI.getUsers(),
         adminAPI.getVendors(),
         adminAPI.getAllProducts(),
         adminAPI.getReviews(),
         adminAPI.getCategories ? adminAPI.getCategories() : Promise.reject('No categories endpoint'),
-        adminAPI.getRevenueOverview ? adminAPI.getRevenueOverview() : Promise.reject('No revenue endpoint')
+        adminAPI.getRevenueOverview ? adminAPI.getRevenueOverview() : Promise.reject('No revenue endpoint'),
+        adminAPI.getDashboardStats()
       ]);
       
       // Process users
@@ -96,7 +95,7 @@ function AdminDashboard() {
       let pendingVendorsList = [];
       if (vendorsRes.status === 'fulfilled' && vendorsRes.value?.data) {
         vendorsData = Array.isArray(vendorsRes.value.data) ? vendorsRes.value.data : (vendorsRes.value.data.data || []);
-        pendingVendorsList = vendorsData.filter(v => v.status === 'pending' || !v.verified);
+        pendingVendorsList = vendorsData.filter(v => v.status === 'pending');
         setPendingVendors(pendingVendorsList.slice(0, 5));
       }
       
@@ -116,7 +115,7 @@ function AdminDashboard() {
         reviewsData = Array.isArray(reviewsRes.value.data) ? reviewsRes.value.data : (reviewsRes.value.data.data || []);
         pendingReviewsList = reviewsData.filter(r => r.status === 'pending');
         setPendingReviews(pendingReviewsList.slice(0, 5));
-        setRecentReviews(pendingReviewsList.slice(0, 5));
+        setRecentReviews(reviewsData.slice(0, 5));
       }
       
       // Process categories
@@ -139,12 +138,16 @@ function AdminDashboard() {
         setRevenueData({ labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], values: [0,0,0,0,0,0] });
       }
       
+      const dashboardStats = dashboardStatsRes.status === 'fulfilled'
+        ? dashboardStatsRes.value?.data || {}
+        : {};
+
       setStats({
         totalUsers: usersData.length,
         totalVendors: vendorsData.length,
         totalProducts: productsData.length,
-        totalOrders: 0,
-        totalRevenue: revenue.values.reduce((a,b) => a+b, 0),
+        totalOrders: Number(dashboardStats.totalOrders) || 0,
+        totalRevenue: Number(dashboardStats.totalRevenue ?? revenue.values.reduce((a,b) => a+b, 0)) || 0,
         pendingVendors: pendingVendorsList.length,
         pendingProducts: pendingProductsList.length,
         pendingReviews: pendingReviewsList.length,
@@ -165,7 +168,7 @@ function AdminDashboard() {
     try {
       await adminAPI.approveVendor(vendorId);
       toast.success('Vendor approved successfully');
-      await fetchAdminData(false, true); // silent refresh
+      await fetchAdminData();
       triggerRealTimeUpdate();
     } catch (error) {
       console.error('Approve vendor error:', error);
@@ -178,7 +181,7 @@ function AdminDashboard() {
     try {
       await adminAPI.approveProduct(productId);
       toast.success('Product approved successfully');
-      await fetchAdminData(false, true);
+      await fetchAdminData();
       triggerRealTimeUpdate();
     } catch (error) {
       console.error('Approve product error:', error);
@@ -191,7 +194,7 @@ function AdminDashboard() {
     try {
       await adminAPI.approveReview(reviewId);
       toast.success('Review approved successfully');
-      await fetchAdminData(false, true);
+      await fetchAdminData();
       triggerRealTimeUpdate();
     } catch (error) {
       console.error('Approve review error:', error);
@@ -205,7 +208,7 @@ function AdminDashboard() {
       try {
         await adminAPI.rejectReview(reviewId);
         toast.success('Review rejected');
-        await fetchAdminData(false, true);
+        await fetchAdminData();
         triggerRealTimeUpdate();
       } catch (error) {
         console.error('Reject review error:', error);
@@ -220,7 +223,7 @@ function AdminDashboard() {
       try {
         await adminAPI.deleteReview(reviewId);
         toast.success('Review deleted');
-        await fetchAdminData(false, true);
+        await fetchAdminData();
         triggerRealTimeUpdate();
       } catch (error) {
         console.error('Delete review error:', error);
@@ -239,16 +242,16 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    fetchAdminData(false, true); // initial load – silent (no spinner)
+    fetchAdminData();
     
     const handlePendingUpdate = () => {
-      fetchAdminData(false, true); // silent refresh
+      fetchAdminData();
     };
     window.addEventListener('pendingCountsUpdated', handlePendingUpdate);
     
     // Poll every 15 seconds (silent)
     const interval = setInterval(() => {
-      fetchAdminData(false, true);
+      fetchAdminData();
     }, 15000);
     
     return () => {
@@ -313,7 +316,7 @@ function AdminDashboard() {
               <Button 
                 variant="outline-light" 
                 size="sm" 
-                onClick={() => fetchAdminData(true, false)}
+                onClick={() => fetchAdminData(true)}
                 disabled={refreshing}
                 className="d-flex align-items-center gap-2"
               >
@@ -329,16 +332,17 @@ function AdminDashboard() {
         <Row className="g-3 mb-4">
           {quickActions.map((action, index) => (
             <Col key={index} lg={3} md={6}>
-              <motion.div
+              <Motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: index * 0.03 }}
                 whileHover={{ y: -4 }}
               >
-                <Card 
+                <Card
+                  as={Link}
+                  to={action.link}
                   className="border-0 shadow-sm quick-action-card"
-                  onClick={() => navigate(action.link)}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', color: 'inherit', textDecoration: 'none' }}
                 >
                   <Card.Body className="d-flex align-items-center">
                     <div className="p-3 rounded-circle me-3" style={{ background: `${action.color}20` }}>
@@ -353,7 +357,7 @@ function AdminDashboard() {
                     <FaArrowRight className="text-muted" size={14} />
                   </Card.Body>
                 </Card>
-              </motion.div>
+              </Motion.div>
             </Col>
           ))}
         </Row>
@@ -363,13 +367,18 @@ function AdminDashboard() {
         <Row className="g-4 mb-4">
           {statCards.map((stat, index) => (
             <Col key={index} lg={3} md={6}>
-              <motion.div
+              <Motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
                 whileHover={{ y: -4 }}
               >
-                <Card className="border-0 shadow-sm stat-card h-100" onClick={() => navigate(stat.link)} style={{ cursor: 'pointer' }}>
+                <Card
+                  as={Link}
+                  to={stat.link}
+                  className="border-0 shadow-sm stat-card h-100"
+                  style={{ cursor: 'pointer', color: 'inherit', textDecoration: 'none' }}
+                >
                   <Card.Body>
                     <div className="d-flex align-items-center justify-content-between">
                       <div>
@@ -382,7 +391,7 @@ function AdminDashboard() {
                     </div>
                   </Card.Body>
                 </Card>
-              </motion.div>
+              </Motion.div>
             </Col>
           ))}
         </Row>
@@ -427,9 +436,9 @@ function AdminDashboard() {
                   </div>
                 )}
                 <div className="text-center mt-2">
-                  <Link to="/admin/categories">
-                    <Button variant="link" size="sm">Manage Categories</Button>
-                  </Link>
+                  <Button as={Link} to="/admin/categories" variant="link" size="sm">
+                    Manage Categories
+                  </Button>
                 </div>
               </Card.Body>
             </Card>
@@ -669,11 +678,9 @@ function AdminDashboard() {
                     <p className="text-muted mb-0 small">Track all platform activities and changes</p>
                   </div>
                 </div>
-                <Link to="/admin/audit-log">
-                  <Button variant="primary" className="d-flex align-items-center gap-2">
-                    <FaHistory /> View Audit Log
-                  </Button>
-                </Link>
+                <Button as={Link} to="/admin/audit-log" variant="primary" className="d-flex align-items-center gap-2">
+                  <FaHistory /> View Audit Log
+                </Button>
               </Card.Body>
             </Card>
           </Col>

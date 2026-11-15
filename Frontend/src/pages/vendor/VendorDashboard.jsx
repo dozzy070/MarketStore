@@ -26,6 +26,7 @@ import {
 import DashboardLayout from '../../components/DashboardLayout';
 import { storeAPI, vendorAPI } from '../../services/api';
 import toast from 'react-hot-toast';
+import { motion as Motion } from 'framer-motion';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -231,8 +232,19 @@ function VendorDashboard() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      await vendorAPI.updateProfile(formData);
-      setProfile({ ...profile, ...formData });
+      await vendorAPI.updateProfile({
+        full_name: formData.full_name,
+        phone_number: formData.phone,
+        location: formData.location,
+        bio: formData.bio
+      });
+      setProfile({
+        ...profile,
+        full_name: formData.full_name,
+        phone: formData.phone,
+        location: formData.location,
+        bio: formData.bio
+      });
       setEditing(false);
       toast.success('Profile updated successfully');
     } catch (error) {
@@ -300,7 +312,7 @@ function VendorDashboard() {
       label: 'Avg Rating', 
       value: stats.averageRating?.toFixed(1) || '0.0', 
       color: '#ef476f', 
-      link: '/vendor/reviews',
+      link: '/vendor/store',
       bg: 'danger'
     }
   ];
@@ -338,11 +350,9 @@ function VendorDashboard() {
               <FaSync className={`me-2 ${refreshing ? 'fa-spin' : ''}`} />
               {refreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
-            <Link to="/vendor/products/add">
-              <Button variant="primary">
-                <FaPlus className="me-2" /> Add Product
-              </Button>
-            </Link>
+            <Button as={Link} to="/vendor/products/add" variant="primary">
+              <FaPlus className="me-2" /> Add Product
+            </Button>
           </div>
         </div>
       </div>
@@ -451,16 +461,9 @@ function VendorDashboard() {
           {editing ? (
             // Edit Mode
             <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Store Name</Form.Label>
-                  <Form.Control
-                    name="store_name"
-                    value={formData.store_name}
-                    onChange={handleChange}
-                    placeholder="Enter store name"
-                  />
-                </Form.Group>
+              <Col md={12} className="mb-3">
+                <span>Manage your store name and public details in </span>
+                <Link to="/vendor/store">store settings</Link>.
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
@@ -492,17 +495,6 @@ function VendorDashboard() {
                     value={formData.location}
                     onChange={handleChange}
                     placeholder="Enter location"
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Website</Form.Label>
-                  <Form.Control
-                    name="website"
-                    value={formData.website}
-                    onChange={handleChange}
-                    placeholder="https://"
                   />
                 </Form.Group>
               </Col>
@@ -581,7 +573,7 @@ function VendorDashboard() {
         {statCards.map((stat, index) => (
           <Col key={index} md={4} lg={3}>
             <Link to={stat.link} className="text-decoration-none">
-              <motion.div
+              <Motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -599,7 +591,7 @@ function VendorDashboard() {
                     </div>
                   </Card.Body>
                 </Card>
-              </motion.div>
+              </Motion.div>
             </Link>
           </Col>
         ))}
@@ -610,7 +602,7 @@ function VendorDashboard() {
         <Card className="border-0 shadow-sm mb-4">
           <Card.Header className="bg-white border-0 pt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h6 className="mb-0">Sales Overview (Last 30 Days)</h6>
-            <Link to="/vendor/analytics" className="text-decoration-none small">View Details</Link>
+            <Link to="/vendor/orders" className="text-decoration-none small">View Orders</Link>
           </Card.Header>
           <Card.Body>
             <div style={{ height: '300px' }}>
@@ -737,11 +729,9 @@ function VendorDashboard() {
                 <div className="text-center py-4 text-muted">
                   <FaBox size={40} className="mb-2" />
                   <p>No products yet</p>
-                  <Link to="/vendor/products/add">
-                    <Button variant="primary" size="sm">
-                      <FaPlus className="me-2" /> Add Your First Product
-                    </Button>
-                  </Link>
+                  <Button as={Link} to="/vendor/products/add" variant="primary" size="sm">
+                    <FaPlus className="me-2" /> Add Your First Product
+                  </Button>
                 </div>
               )}
             </Card.Body>

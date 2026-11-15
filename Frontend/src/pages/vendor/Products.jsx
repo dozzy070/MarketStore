@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Button, Badge, Table, Form, Modal, Alert } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { 
   FaEdit, 
   FaTrash, 
@@ -21,11 +21,12 @@ import { productAPI, categoryAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
 function Products() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [error, setError] = useState(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
+  const filter = searchParams.get('filter') || 'all';
   const [sortBy, setSortBy] = useState('newest');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -163,6 +164,8 @@ function Products() {
       filtered = filtered.filter(p => !p?.published);
     } else if (filter === 'out') {
       filtered = filtered.filter(p => (p?.stock_quantity || 0) === 0);
+    } else if (filter === 'lowstock') {
+      filtered = filtered.filter(p => Number(p?.stock_quantity || 0) > 0 && Number(p?.stock_quantity || 0) < 10);
     }
 
     filtered.sort((a, b) => {
@@ -293,10 +296,17 @@ function Products() {
               </div>
             </Col>
             <Col md={3}>
-              <Form.Select value={filter} onChange={(e) => setFilter(e.target.value)}>
+              <Form.Select
+                value={filter}
+                onChange={(e) => {
+                  const nextFilter = e.target.value;
+                  setSearchParams(nextFilter === 'all' ? {} : { filter: nextFilter });
+                }}
+              >
                 <option value="all">All Products</option>
                 <option value="published">Published</option>
                 <option value="draft">Draft</option>
+                <option value="lowstock">Low Stock</option>
                 <option value="out">Out of Stock</option>
               </Form.Select>
             </Col>

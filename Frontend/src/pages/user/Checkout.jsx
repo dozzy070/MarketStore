@@ -1,5 +1,5 @@
 // frontend/src/pages/Checkout.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Form, Button, Table, Badge, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -23,6 +23,12 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { orderAPI, paymentAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+
+const shippingMethods = [
+  { id: 'standard', name: 'Standard Delivery', price: 2500, days: '3-5 business days' },
+  { id: 'express', name: 'Express Delivery', price: 5000, days: '1-2 business days' },
+  { id: 'pickup', name: 'Store Pickup', price: 0, days: 'Ready in 24 hours' }
+];
 
 function Checkout() {
   const navigate = useNavigate();
@@ -70,34 +76,28 @@ function Checkout() {
     total: 0
   });
 
-  const shippingMethods = [
-    { id: 'standard', name: 'Standard Delivery', price: 2500, days: '3-5 business days' },
-    { id: 'express', name: 'Express Delivery', price: 5000, days: '1-2 business days' },
-    { id: 'pickup', name: 'Store Pickup', price: 0, days: 'Ready in 24 hours' }
-  ];
-
   const [selectedShipping, setSelectedShipping] = useState('standard');
 
-  useEffect(() => {
-    loadCart();
-    loadUserProfile();
-  }, []);
+  const loadCart = useCallback(() => {
+    let savedCart;
+    try {
+      savedCart = JSON.parse(localStorage.getItem('cart') || '[]');
+    } catch (error) {
+      console.error('Unable to read cart from storage:', error);
+      localStorage.removeItem('cart');
+      savedCart = [];
+      toast.error('Your saved cart could not be loaded');
+    }
 
-  useEffect(() => {
-    calculateOrderSummary();
-  }, [cart, selectedShipping]);
-
-  const loadCart = () => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart && JSON.parse(savedCart).length > 0) {
-      setCart(JSON.parse(savedCart));
+    if (Array.isArray(savedCart) && savedCart.length > 0) {
+      setCart(savedCart);
     } else {
       toast.error('Your cart is empty');
       navigate('/cart');
     }
-  };
+  }, [navigate]);
 
-  const loadUserProfile = () => {
+  const loadUserProfile = useCallback(() => {
     if (user) {
       setFormData({
         shipping: {
@@ -124,16 +124,29 @@ function Checkout() {
         }
       });
     }
-  };
+  }, [user]);
 
-  const calculateOrderSummary = () => {
+  const calculateOrderSummary = useCallback(() => {
     const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
     const shipping = shippingMethods.find(m => m.id === selectedShipping)?.price || 0;
-    const tax = subtotal * 0.075;
-    const total = subtotal + shipping + tax;
+    const roundedSubtotal = Math.round(subtotal * 100) / 100;
+    const tax = Math.round(roundedSubtotal * 0.075 * 100) / 100;
+    const total = Math.round((roundedSubtotal + shipping + tax) * 100) / 100;
 
-    setOrderSummary({ subtotal, shipping, tax, total });
-  };
+    setOrderSummary({ subtotal: roundedSubtotal, shipping, tax, total });
+  }, [cart, selectedShipping]);
+
+  useEffect(() => {
+    loadCart();
+  }, [loadCart]);
+
+  useEffect(() => {
+    loadUserProfile();
+  }, [loadUserProfile]);
+
+  useEffect(() => {
+    calculateOrderSummary();
+  }, [calculateOrderSummary]);
 
   const handleInputChange = (section, field, value) => {
     setFormData(prev => ({
@@ -178,6 +191,8 @@ function Checkout() {
 
   // Create order before payment
   const createOrder = async () => {
+    if (createdOrder) return createdOrder;
+
     setCreatingOrder(true);
     
     try {
@@ -192,6 +207,7 @@ function Checkout() {
           ...formData.shipping,
           method: selectedShipping
         },
+        shipping_method: selectedShipping,
         billing_address: sameAsBilling ? formData.shipping : formData.billing,
         payment_method: paymentMethod,
         subtotal: orderSummary.subtotal,
@@ -203,16 +219,19 @@ function Checkout() {
 
       // Call your API to create order
       const response = await orderAPI.createOrder(orderData);
-      
-      if (response.data && response.data.success) {
-        setCreatedOrder(response.data.order);
-        return response.data.order;
+
+      const orderDataFromApi = response.data?.data || response.data?.order;
+      const orderId = orderDataFromApi?.orderId ?? orderDataFromApi?.id;
+      if (response.data?.success && orderId != null && Number.isFinite(Number(orderDataFromApi.total))) {
+        const order = { ...orderDataFromApi, id: orderId };
+        setCreatedOrder(order);
+        return order;
       } else {
-        throw new Error('Failed to create order');
+        throw new Error(response.data?.message || 'Failed to create order');
       }
     } catch (error) {
       console.error('Error creating order:', error);
-      toast.error('Failed to create order. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to create order. Please try again.');
       return null;
     } finally {
       setCreatingOrder(false);
@@ -225,39 +244,39 @@ function Checkout() {
     
     try {
       const response = await paymentAPI.initializePayment({
-        amount: orderSummary.total,
-        email: formData.shipping.email,
+        amount: order.total,
         orderId: order.id,
-        metadata: {
-          order_id: order.id,
-          customer_name: formData.shipping.fullName,
-          customer_phone: formData.shipping.phone
-        }
       });
       
-      if (response.data.success) {
-        // Open Paystack popup
-        const paystack = new window.PaystackPop();
-        paystack.newTransaction({
+      const payment = response.data;
+      if (payment?.success && payment.reference && payment.email &&
+          Number(payment.amount) === Number(order.total) && window.PaystackPop) {
+        const handler = window.PaystackPop.setup({
           key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-          email: formData.shipping.email,
-          amount: orderSummary.total * 100,
-          reference: response.data.reference,
-          onSuccess: (transaction) => {
+          email: payment.email,
+          amount: Number(payment.amount) * 100,
+          ref: payment.reference,
+          callback: (transaction) => {
+            if (transaction.reference !== payment.reference) {
+              setProcessingPayment(false);
+              toast.error('Payment reference did not match. Please contact support.');
+              return;
+            }
             handlePaymentSuccess(transaction, order.id);
           },
-          onCancel: () => {
+          onClose: () => {
             setProcessingPayment(false);
             toast.error('Payment cancelled');
           },
         });
+        handler.openIframe();
       } else {
-        toast.error(response.data.message || 'Failed to initialize payment');
+        toast.error(payment?.message || 'Failed to initialize payment');
         setProcessingPayment(false);
       }
     } catch (error) {
       console.error('Payment initialization error:', error);
-      toast.error('Failed to initialize payment. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to initialize payment. Please try again.');
       setProcessingPayment(false);
     }
   };
@@ -275,7 +294,7 @@ function Checkout() {
         localStorage.removeItem('cart');
         
         // Navigate to order confirmation
-        navigate(`/order-confirmation/${orderId}`);
+        navigate(`/user/orders/${orderId}`);
       } else {
         toast.error('Payment verification failed');
         setProcessingPayment(false);
@@ -561,7 +580,7 @@ function Checkout() {
                 <hr />
                 <div className="d-flex justify-content-between mb-2">
                   <span>Subtotal</span>
-                  <span>₦{orderSummary.subtotal.toLocaleString()}</span>
+                  <span>₦{orderSummary.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-2">
                   <span>Shipping</span>
@@ -569,12 +588,12 @@ function Checkout() {
                 </div>
                 <div className="d-flex justify-content-between mb-2">
                   <span>Tax (7.5%)</span>
-                  <span>₦{orderSummary.tax.toLocaleString()}</span>
+                  <span>₦{orderSummary.tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <hr />
                 <div className="d-flex justify-content-between mb-4">
                   <strong>Total</strong>
-                  <h4 className="text-primary mb-0">₦{orderSummary.total.toLocaleString()}</h4>
+                  <h4 className="text-primary mb-0">₦{orderSummary.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
                 </div>
 
                 <div className="d-flex gap-2">

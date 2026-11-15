@@ -7,6 +7,7 @@ import {
   FaStar, FaTrash, FaCheck, FaTimes, FaSearch,
   FaUser, FaBox, FaSync, FaExclamationTriangle,
 } from 'react-icons/fa';
+import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -14,10 +15,11 @@ import toast from 'react-hot-toast';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function AdminReviews() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [reviews, setReviews] = useState([]);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all'); // all | pending | approved | rejected | featured
+  const filter = searchParams.get('filter') || 'all';
   const [refreshing, setRefreshing] = useState(false);
   const [busyId, setBusyId] = useState(null);
 
@@ -124,7 +126,7 @@ function AdminReviews() {
 
   const handleClearFilters = () => {
     setSearch('');
-    setFilter('all');
+    setSearchParams({}, { replace: true });
   };
 
   return (
@@ -202,7 +204,13 @@ function AdminReviews() {
               </InputGroup>
             </Col>
             <Col md={4}>
-              <Form.Select value={filter} onChange={(e) => setFilter(e.target.value)}>
+              <Form.Select
+                value={filter}
+                onChange={(e) => {
+                  const nextFilter = e.target.value;
+                  setSearchParams(nextFilter === 'all' ? {} : { filter: nextFilter });
+                }}
+              >
                 <option value="all">All Reviews ({stats.total})</option>
                 <option value="pending">Pending ({stats.pending})</option>
                 <option value="approved">Approved ({stats.approved})</option>

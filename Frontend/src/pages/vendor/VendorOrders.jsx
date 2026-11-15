@@ -14,16 +14,17 @@ import {
   FaDownload,
   FaExclamationTriangle
 } from 'react-icons/fa';
+import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { orderAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
 function VendorOrders() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [error, setError] = useState(null);
   const [orders, setOrders] = useState([]);
-  const [filteredOrders, setFilteredOrders] = useState([]);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const statusFilter = searchParams.get('filter') || 'all';
   const [showDetails, setShowDetails] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,10 +52,6 @@ function VendorOrders() {
   useEffect(() => {
     fetchOrders();
   }, []);
-
-  useEffect(() => {
-    filterOrdersList();
-  }, [search, statusFilter, orders]);
 
   const fetchOrders = async (showToast = false) => {
     if (showToast) setRefreshing(true);
@@ -99,7 +96,7 @@ function VendorOrders() {
     }
   };
 
-  const filterOrdersList = () => {
+  const filteredOrders = useMemo(() => {
     let filtered = [...orders];
 
     if (search) {
@@ -114,8 +111,8 @@ function VendorOrders() {
       filtered = filtered.filter(order => order?.status === statusFilter);
     }
 
-    setFilteredOrders(filtered);
-  };
+    return filtered;
+  }, [orders, search, statusFilter]);
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
@@ -132,15 +129,28 @@ function VendorOrders() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const colors = {
-      pending: 'warning',
-      processing: 'info',
-      shipped: 'primary',
-      delivered: 'success',
-      cancelled: 'danger'
-    };
-    return <Badge bg={colors[status] || 'secondary'}>{status || 'unknown'}</Badge>;
+  const handleExport = () => {
+    const escapeCsv = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const rows = [
+      ['Order ID', 'Customer', 'Date', 'Total', 'Status'],
+      ...filteredOrders.map(order => [
+        order.id,
+        order.customer_name || order.user?.name || 'Guest',
+        order.created_at || order.date || '',
+        order.total || 0,
+        order.status || 'pending'
+      ])
+    ];
+    const csv = rows.map(row => row.map(escapeCsv).join(',')).join('\r\n');
+    const file = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+    const url = window.URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `vendor-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    link.remove();
+    window.setTimeout(() => window.URL.revokeObjectURL(url), 0);
+    toast.success('Orders exported');
   };
 
   return (
@@ -154,7 +164,7 @@ function VendorOrders() {
           <Button variant="outline-secondary" onClick={() => window.print()}>
             <FaPrint className="me-2" /> Print
           </Button>
-          <Button variant="outline-success">
+          <Button variant="outline-success" onClick={handleExport}>
             <FaDownload className="me-2" /> Export
           </Button>
         </div>
@@ -256,7 +266,13 @@ function VendorOrders() {
               </div>
             </Col>
             <Col md={3}>
-              <Form.Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <Form.Select
+                value={statusFilter}
+                onChange={(e) => {
+                  const nextFilter = e.target.value;
+                  setSearchParams(nextFilter === 'all' ? {} : { filter: nextFilter });
+                }}
+              >
                 <option value="all">All Orders</option>
                 <option value="pending">Pending</option>
                 <option value="processing">Processing</option>

@@ -19,6 +19,7 @@ export const initializePayment = async (email, amount, reference, metadata = {})
         callback_url: `${process.env.FRONTEND_URL}/payment/verify`,
       },
       {
+        timeout: 15000,
         headers: {
           Authorization: `Bearer ${PAYSTACK_SECRET}`,
           'Content-Type': 'application/json',
@@ -47,6 +48,7 @@ export const verifyPayment = async (reference) => {
     const response = await axios.get(
       `${PAYSTACK_BASE_URL}/transaction/verify/${reference}`,
       {
+        timeout: 15000,
         headers: {
           Authorization: `Bearer ${PAYSTACK_SECRET}`,
         },
@@ -84,7 +86,7 @@ export const verifyPayment = async (reference) => {
 
 // Generate unique reference
 export const generateReference = () => {
-  return `PAY-${Date.now()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+  return `PAY-${crypto.randomBytes(16).toString('hex').toUpperCase()}`;
 };
 
 // List banks for transfer
@@ -209,12 +211,14 @@ export const initiateTransfer = async (recipientCode, amount, reason) => {
 
 // Webhook verification
 export const verifyWebhookSignature = (payload, signature, secret) => {
-  const hash = crypto
+  if (typeof signature !== 'string' || !/^[a-f0-9]{128}$/i.test(signature) ||
+      typeof secret !== 'string' || !secret) return false;
+  const expected = crypto
     .createHmac('sha512', secret)
     .update(JSON.stringify(payload))
-    .digest('hex');
-  
-  return hash === signature;
+    .digest();
+  const provided = Buffer.from(signature, 'hex');
+  return provided.length === expected.length && crypto.timingSafeEqual(expected, provided);
 };
 
 export default {

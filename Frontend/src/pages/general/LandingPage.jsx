@@ -20,7 +20,9 @@ import axios from 'axios';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { categoryAPI, newsletterAPI, reviewAPI, storeAPI, userAPI } from '../../services/api';
-import heroImage from '../../assets/doormart-hero.svg';
+
+import doormartLogo from '../../assets/doormart-logo.jpeg';
+const heroImage = 'https://images.unsplash.com/photo-1589156280159-27c7c22e2b00?q=80&w=800&auto=format&fit=crop';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -496,7 +498,8 @@ function LandingPage() {
       <Navbar bg="white" expand="lg" className="py-3 shadow-sm sticky-top">
         <Container>
           <Navbar.Brand as={Link} to="/" className="fw-bold fs-2 d-flex align-items-center">
-            <div className="brand-badge me-2"><FaStore size={20} /></div>
+            {/* LOGO INSERTED HERE */}
+            <img src={doormartLogo} alt="DoorMart Logo" className="brand-logo me-2" />
             <span className="text-dark">Door<span className="text-gold">Mart</span></span>
           </Navbar.Brand>
           <div className="d-flex align-items-center gap-3 order-lg-2">
@@ -587,11 +590,12 @@ function LandingPage() {
                   transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
                   className="hero-image-wrap"
                 >
+                  {/* HERO IMAGE INSERTED HERE */}
                   <img
                     src={heroImage}
-                    alt="DoorMart shopping bags and packages"
+                    alt="African woman shopping"
                     className="hero-illustration"
-                    fetchPriority="high"
+                    fetchpriority="high"
                   />
                   <Motion.div className="hero-float-card hero-float-card-1" animate={{ y: [0, -10, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
                     <FaCheckCircle className="text-success me-2" /> <strong>Find your next favorite</strong>
@@ -1077,7 +1081,8 @@ function LandingPage() {
             <Col lg={6} className="text-center">
               <div className="phone-mockup">
                 <div className="phone-screen">
-                  <FaMobileAlt size={64} className="text-primary mb-3" />
+                  {/* LOGO INSERTED HERE */}
+                  <img src={doormartLogo} alt="DoorMart Logo" className="brand-logo mb-3" style={{ height: '80px', width: 'auto' }} />
                   <h5 className="fw-bold">DoorMart</h5>
                   <p className="text-muted small mb-0">Shop from your mobile browser.</p>
                 </div>
@@ -1240,7 +1245,8 @@ function LandingPage() {
           <Row className="g-4 mb-4">
             <Col lg={3} md={6}>
               <div className="d-flex align-items-center mb-3">
-                <div className="brand-badge me-2"><FaStore size={20} /></div>
+                {/* LOGO INSERTED HERE */}
+                <img src={doormartLogo} alt="DoorMart Logo" className="brand-logo me-2" />
                 <h5 className="mb-0 text-white">Door<span className="text-gold">Mart</span></h5>
               </div>
               <p className="text-white-50 mb-3">Your one‑stop destination for quality products at great prices.</p>
@@ -1337,7 +1343,14 @@ function LandingPage() {
           transition: all 0.3s;
         }
         .btn-gold:hover { filter: brightness(1.1); color: #fff; transform: translateY(-1px); }
-        .brand-badge { background: var(--dm-grad-primary); color: #fff; padding: 8px; border-radius: 10px; display: inline-flex; align-items: center; }
+
+        /* ── Brand Logo Styling ─────────────── */
+        .brand-logo {
+          height: 45px; /* Adjust size as needed */
+          width: auto;
+          object-fit: contain;
+          border-radius: 8px;
+        }
 
         /* ── Top promo ticker (gold→green) ──── */
         .promo-ticker {
@@ -1408,12 +1421,15 @@ function LandingPage() {
           max-width: 560px;
           margin: 0 auto;
         }
+
+        /* ── Hero Image Update ──────────────── */
         .hero-illustration {
           display: block;
           width: 100%;
           max-height: 520px;
-          object-fit: contain;
-          filter: drop-shadow(0 25px 35px rgba(0,0,0,0.2));
+          object-fit: cover; /* Changed to cover to fill the card shape nicely */
+          border-radius: 24px; /* Added rounded corners to make it look like a premium card */
+          box-shadow: 0 25px 35px rgba(0,0,0,0.3); /* Enhanced shadow for real image */
           animation: heroImageFloat 6s ease-in-out infinite;
         }
         @keyframes heroImageFloat {
@@ -1769,6 +1785,7 @@ function LandingPage() {
           .countdown-num { font-size: 1.2rem; }
           .hero-float-card { display: none; }
           .testimonial-wrap, .blog-card-wrap { width: 85vw; }
+          .brand-logo { height: 35px; }
         }
         @media (prefers-reduced-motion: reduce) {
           .hero-illustration { animation: none; }

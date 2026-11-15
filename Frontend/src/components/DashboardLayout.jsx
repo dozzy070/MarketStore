@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import '../styles/dashboard.css';
 import NotificationBell from './NotificationBell';
 import { adminAPI } from '../services/api';
+import doormartLogo from '../assets/doormart-logo.jpeg';
 
 function DashboardLayout({ children }) {
   const { user, logout } = useAuth();
@@ -247,10 +248,10 @@ function DashboardLayout({ children }) {
         animate={{ width: getSidebarWidth(), x: isMobile ? (mobileSidebarOpen ? 0 : '-100%') : 0 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
       >
-        <div className="sidebar-header">
+        <div className={`sidebar-header ${showLabels ? '' : 'sidebar-header-collapsed'}`}>
           <div className="d-flex align-items-center">
             <div className="sidebar-logo">
-              <span className="sidebar-logo-icon">🏪</span>
+              <img src={doormartLogo} alt="DoorMart logo" className="sidebar-brand-logo" />
               {showLabels && (
                 <span className="sidebar-logo-text ms-2">
                   DoorMart

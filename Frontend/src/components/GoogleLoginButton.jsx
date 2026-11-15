@@ -5,8 +5,8 @@ import { Button } from 'react-bootstrap';
 
 function GoogleLoginButton() {
   const handleGoogleLogin = () => {
-    // Redirect to backend Google auth
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    window.location.assign(`${apiUrl.replace(/\/+$/, '')}/auth/google`);
   };
 
   return (

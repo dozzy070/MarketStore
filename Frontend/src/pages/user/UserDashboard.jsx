@@ -1,5 +1,5 @@
 // frontend/src/pages/UserDashboard.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Row, Col, Card, Button, Badge, Alert, Dropdown } from 'react-bootstrap';
 import {
   FaUser,
@@ -20,8 +20,6 @@ import {
   FaPercent,
   FaGift,
   FaArrowUp,
-  FaDownload,
-  FaShareAlt,
   FaEllipsisV,
   FaGem
 } from 'react-icons/fa';
@@ -31,7 +29,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { userAPI, orderAPI, paymentAPI, productAPI } from '../../services/api'; // added productAPI
 import PaymentModal from '../../components/PaymentModal';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 
 function UserDashboard() {
   const { user } = useAuth();
@@ -51,16 +49,13 @@ function UserDashboard() {
       reviewsCount: 0,
       totalSpent: 0,
       averageOrderValue: 0,
-      returningRate: 0
+      pendingOrders: 0,
+      deliveryRate: 0
     },
     recommendations: []      // will be filled from real product data
   });
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async (showToast = false) => {
+  const fetchUserData = useCallback(async (showToast = false) => {
     if (showToast) {
       setRefreshing(true);
     } else {
@@ -76,7 +71,6 @@ function UserDashboard() {
         profileRes,
         ordersRes,
         paymentsRes,
-        balanceRes,
         wishlistRes,
         reviewsRes,
         productsRes
@@ -84,7 +78,6 @@ function UserDashboard() {
         userAPI.getProfile(),
         orderAPI.getOrders(),
         paymentAPI.getPaymentHistory(),
-        paymentAPI.getBalance(),
         userAPI.getWishlist(),
         userAPI.getReviews(),        // assumes you have a getReviews endpoint
         productAPI.getProducts()
@@ -106,12 +99,8 @@ function UserDashboard() {
 
       // --- Process payments ---
       let paymentsData = [];
-      let balanceData = 0;
       if (paymentsRes.status === 'fulfilled' && paymentsRes.value?.data) {
         paymentsData = paymentsRes.value.data.payments || [];
-      }
-      if (balanceRes.status === 'fulfilled' && balanceRes.value?.data) {
-        balanceData = balanceRes.value.data.balance || 0;
       }
 
       // --- Process wishlist count ---
@@ -157,9 +146,12 @@ function UserDashboard() {
 
       // --- Calculate order statistics ---
       const deliveredOrders = ordersData.filter(o => o?.status === 'delivered');
+      const pendingOrders = ordersData.filter(o => o?.status === 'pending').length;
       const totalSpent = deliveredOrders.reduce((sum, o) => sum + (parseFloat(o?.total) || 0), 0);
       const averageOrderValue = deliveredOrders.length ? totalSpent / deliveredOrders.length : 0;
-      const returningRate = ordersData.length > 0 ? 75 : 0; // placeholder – you can compute real rate
+      const deliveryRate = ordersData.length
+        ? Math.round((deliveredOrders.length / ordersData.length) * 100)
+        : 0;
 
       // --- Build final userData object ---
       setUserData({
@@ -177,7 +169,8 @@ function UserDashboard() {
           reviewsCount,
           totalSpent,
           averageOrderValue,
-          returningRate
+          pendingOrders,
+          deliveryRate
         },
         recommendations: productsData
       });
@@ -191,9 +184,13 @@ function UserDashboard() {
       if (showToast) setRefreshing(false);
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const handlePaymentSuccess = (payment) => {
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  const handlePaymentSuccess = () => {
     toast.success('Payment successful!');
     fetchUserData(); // refresh data
   };
@@ -226,8 +223,6 @@ function UserDashboard() {
       icon: FaShoppingBag,
       label: 'Total Orders',
       value: userData.stats.totalOrders,
-      trend: '+12%',
-      trendUp: true,
       link: '/user/orders',
       gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
     },
@@ -235,8 +230,6 @@ function UserDashboard() {
       icon: FaWallet,
       label: 'Total Spent',
       value: formatCurrency(userData.stats.totalSpent),
-      trend: '+8%',
-      trendUp: true,
       link: '/user/payments',
       gradient: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)'
     },
@@ -244,8 +237,6 @@ function UserDashboard() {
       icon: FaHeart,
       label: 'Wishlist',
       value: userData.stats.wishlistCount,
-      trend: '+3',
-      trendUp: true,
       link: '/user/wishlist',
       gradient: 'linear-gradient(135deg, #ec489a 0%, #f43f5e 100%)'
     },
@@ -253,8 +244,6 @@ function UserDashboard() {
       icon: FaStar,
       label: 'Reviews',
       value: userData.stats.reviewsCount,
-      trend: '+2',
-      trendUp: true,
       link: '/user/reviews',
       gradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
     }
@@ -317,7 +306,7 @@ function UserDashboard() {
           {statCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <motion.div
+              <Motion.div
                 key={index}
                 style={styles.statCard}
                 initial={{ opacity: 0, y: 20 }}
@@ -340,7 +329,7 @@ function UserDashboard() {
                     )}
                   </div>
                 </Link>
-              </motion.div>
+              </Motion.div>
             );
           })}
         </div>
@@ -401,13 +390,13 @@ function UserDashboard() {
               <FaPercent />
             </div>
             <div style={styles.metricContent}>
-              <span style={styles.metricLabel}>Returning Rate</span>
-              <span style={styles.metricValue}>{userData.stats.returningRate}%</span>
+              <span style={styles.metricLabel}>Delivery Rate</span>
+              <span style={styles.metricValue}>{userData.stats.deliveryRate}%</span>
             </div>
           </div>
           <div style={styles.metricCard}>
             <div style={styles.metricIcon}>
-              <FaGift />
+              <FaClock />
             </div>
             <div style={styles.metricContent}>
               <span style={styles.metricLabel}>Member Since</span>
@@ -423,8 +412,8 @@ function UserDashboard() {
               <FaGem />
             </div>
             <div style={styles.metricContent}>
-              <span style={styles.metricLabel}>Loyalty Points</span>
-              <span style={styles.metricValue}>2,450</span> {/* This could also be fetched if you have a points system */}
+              <span style={styles.metricLabel}>Pending Orders</span>
+              <span style={styles.metricValue}>{userData.stats.pendingOrders}</span>
             </div>
           </div>
         </div>
@@ -460,7 +449,7 @@ function UserDashboard() {
                       const StatusIcon = getStatusConfig(order.status).icon;
                       const statusConfig = getStatusConfig(order.status);
                       return (
-                        <motion.tr
+                        <Motion.tr
                           key={order.id}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
@@ -500,19 +489,13 @@ function UserDashboard() {
                                 <FaEllipsisV />
                               </Dropdown.Toggle>
                               <Dropdown.Menu>
-                                <Dropdown.Item onClick={() => navigate(`/user/orders/${order.id}`)}>
-                                  <FaEye /> View Details
-                                </Dropdown.Item>
-                                <Dropdown.Item>
-                                  <FaDownload /> Download Invoice
-                                </Dropdown.Item>
-                                <Dropdown.Item>
-                                  <FaShareAlt /> Track Order
+                                <Dropdown.Item as={Link} to={`/user/orders/${order.id}`}>
+                                  <FaEye className="me-2" /> View / Track Order
                                 </Dropdown.Item>
                               </Dropdown.Menu>
                             </Dropdown>
                           </td>
-                        </motion.tr>
+                        </Motion.tr>
                       );
                     })}
                   </AnimatePresence>
@@ -556,7 +539,7 @@ function UserDashboard() {
                 </thead>
                 <tbody>
                   {userData.payments.map((payment, index) => (
-                    <motion.tr
+                    <Motion.tr
                       key={payment.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -587,7 +570,7 @@ function UserDashboard() {
                           {payment.status === 'success' ? 'Success' : payment.status === 'pending' ? 'Pending' : 'Failed'}
                         </span>
                       </td>
-                    </motion.tr>
+                    </Motion.tr>
                   ))}
                 </tbody>
               </table>
@@ -616,7 +599,7 @@ function UserDashboard() {
 
             <div style={styles.recommendationsGrid}>
               {userData.recommendations.map((product, index) => (
-                <motion.div
+                <Motion.div
                   key={product.id}
                   style={styles.recommendationCard}
                   initial={{ opacity: 0, y: 20 }}
@@ -635,7 +618,7 @@ function UserDashboard() {
                       View Product
                     </Button>
                   </div>
-                </motion.div>
+                </Motion.div>
               ))}
             </div>
           </div>
@@ -647,22 +630,26 @@ function UserDashboard() {
             <h2 style={styles.sectionTitle}>Quick Actions</h2>
           </div>
           <div style={styles.quickActionsGrid}>
-            <div style={styles.actionCard} onClick={() => navigate('/user/profile')}>
+            <Link to="/user/profile" style={styles.actionCard}>
               <FaUser style={styles.actionIcon} />
               <span>Edit Profile</span>
-            </div>
-            <div style={styles.actionCard} onClick={() => navigate('/user/wishlist')}>
+            </Link>
+            <Link to="/user/wishlist" style={styles.actionCard}>
               <FaHeart style={styles.actionIcon} />
               <span>View Wishlist</span>
-            </div>
-            <div style={styles.actionCard} onClick={() => navigate('/user/reviews')}>
+            </Link>
+            <Link to="/user/reviews" style={styles.actionCard}>
               <FaStar style={styles.actionIcon} />
               <span>Write Reviews</span>
-            </div>
-            <div style={styles.actionCard} onClick={() => setShowPaymentModal(true)}>
+            </Link>
+            <button
+              type="button"
+              style={{ ...styles.actionCard, border: 0, width: '100%', font: 'inherit', color: 'inherit' }}
+              onClick={() => setShowPaymentModal(true)}
+            >
               <FaCreditCard style={styles.actionIcon} />
               <span>Make Payment</span>
-            </div>
+            </button>
           </div>
         </div>
       </div>
@@ -879,10 +866,15 @@ const styles = {
     gap: '16px'
   },
   actionCard: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
     background: 'white',
     borderRadius: '16px',
     padding: '20px',
     textAlign: 'center',
+    textDecoration: 'none',
+    color: 'inherit',
     cursor: 'pointer',
     transition: 'all 0.3s',
     boxShadow: '0 4px 12px rgba(0,0,0,0.05)'

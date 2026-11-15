@@ -18,9 +18,10 @@ import {
   FaEnvelopeOpenText
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
-import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import GoogleLoginButton from '../../components/GoogleLoginButton';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -103,7 +104,7 @@ function Login() {
       } else {
         setError(result.error || 'Invalid email or password');
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -116,7 +117,7 @@ function Login() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/forgot-password', {
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: resetEmail })
@@ -130,7 +131,7 @@ function Login() {
       } else {
         setError(data.message || 'Failed to send reset email');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setResetLoading(false);
@@ -154,7 +155,7 @@ function Login() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/reset-password', {
+      const response = await fetch(`${API_URL}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -181,7 +182,7 @@ function Login() {
         setError(data.message || 'Failed to reset password');
         toast.error(data.message || 'Failed to reset password');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
       toast.error('Network error. Please try again.');
     } finally {

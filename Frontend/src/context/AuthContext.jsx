@@ -1,8 +1,9 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
+/* eslint-disable react-refresh/only-export-components */
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -59,6 +60,14 @@ export const AuthProvider = ({ children }) => {
     void verifyStoredSession();
   }, [API_URL]);
 
+  const completeLogin = useCallback((token, authenticatedUser) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(authenticatedUser));
+    axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+    setUser(authenticatedUser);
+    setIsAuthenticated(true);
+  }, []);
+
   const login = async (email, password) => {
     try {
       const response = await axios.post(`${API_URL}/auth/login`, { email, password });
@@ -113,6 +122,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated,
+    completeLogin,
     login,
     logout,
     register

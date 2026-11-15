@@ -1,5 +1,5 @@
 // frontend/src/pages/AdminProducts.jsx - No Loading Spinners
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container, Row, Col, Card, Table, Button, Badge, Form,
   InputGroup, Modal, Image, Alert
@@ -21,19 +21,28 @@ import {
   FaSave,
   FaUpload
 } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { adminAPI, productAPI, categoryAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
+const FALLBACK_CATEGORIES = [
+  { id: 1, name: 'Electronics' },
+  { id: 2, name: 'Fashion' },
+  { id: 3, name: 'Home & Living' },
+  { id: 4, name: 'Sports' },
+  { id: 5, name: 'Books' },
+  { id: 6, name: 'Beauty' }
+];
+
 function AdminProducts() {
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const statusFilter = searchParams.get('filter') || 'all';
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -66,79 +75,7 @@ function AdminProducts() {
     return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'%3E%3Crect width='${size}' height='${size}' fill='%23e9ecef'/%3E%3Ctext x='50%25' y='50%25' font-size='${size / 5}' text-anchor='middle' dy='.3em' fill='%236c757d'%3E${text}%3C/text%3E%3C/svg%3E`;
   };
 
-  // Mock data for fallback
-  const mockCategories = [
-    { id: 1, name: 'Electronics' },
-    { id: 2, name: 'Fashion' },
-    { id: 3, name: 'Home & Living' },
-    { id: 4, name: 'Sports' },
-    { id: 5, name: 'Books' },
-    { id: 6, name: 'Beauty' }
-  ];
-
-  const mockProducts = [
-    {
-      id: 1,
-      name: 'Wireless Headphones',
-      price: 15000,
-      stock_quantity: 45,
-      status: 'published',
-      category_id: 1,
-      vendor_name: 'Tech Haven',
-      image_url: null,
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 2,
-      name: 'Running Shoes',
-      price: 25000,
-      stock_quantity: 0,
-      status: 'published',
-      category_id: 4,
-      vendor_name: 'Sports World',
-      image_url: null,
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 3,
-      name: 'Smart Watch',
-      price: 45000,
-      stock_quantity: 12,
-      status: 'pending',
-      category_id: 1,
-      vendor_name: 'Tech Haven',
-      image_url: null,
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 4,
-      name: 'Leather Jacket',
-      price: 35000,
-      stock_quantity: 8,
-      status: 'published',
-      category_id: 2,
-      vendor_name: 'Fashion Forward',
-      image_url: null,
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 5,
-      name: 'Coffee Maker',
-      price: 28000,
-      stock_quantity: 15,
-      status: 'draft',
-      category_id: 3,
-      vendor_name: 'Home Essentials',
-      image_url: null,
-      created_at: new Date().toISOString()
-    }
-  ];
-
-  useEffect(() => {
-    fetchData();
-    fetchCategories();
-  }, []);
-  const fetchData = async (showToast = false) => {
+  const fetchData = useCallback(async (showToast = false) => {
     if (showToast) setRefreshing(true);
     setError(null);
 
@@ -185,9 +122,9 @@ function AdminProducts() {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, []);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       let categoriesData = [];
       try {
@@ -205,15 +142,20 @@ function AdminProducts() {
         }
       } catch (categoryError) {
         console.log('Using mock categories data:', categoryError.message);
-        categoriesData = mockCategories;
+        categoriesData = FALLBACK_CATEGORIES;
       }
 
-      setCategories(Array.isArray(categoriesData) ? categoriesData : mockCategories);
+      setCategories(Array.isArray(categoriesData) ? categoriesData : FALLBACK_CATEGORIES);
     } catch (err) {
       console.error('Failed to load categories:', err);
-      setCategories(mockCategories);
+      setCategories(FALLBACK_CATEGORIES);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    fetchCategories();
+  }, [fetchData, fetchCategories]);
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
@@ -516,7 +458,10 @@ function AdminProducts() {
             <Col md={3}>
               <Form.Select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  const nextFilter = e.target.value;
+                  setSearchParams(nextFilter === 'all' ? {} : { filter: nextFilter });
+                }}
               >
                 <option value="all">All Status</option>
                 <option value="published">Published</option>
@@ -531,7 +476,7 @@ function AdminProducts() {
                 onClick={() => {
                   setSearch('');
                   setCategoryFilter('all');
-                  setStatusFilter('all');
+                  setSearchParams({}, { replace: true });
                 }}
               >
                 Clear Filters

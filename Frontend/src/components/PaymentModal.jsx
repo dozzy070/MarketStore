@@ -19,6 +19,13 @@ function PaymentModal({ show, onClose, amount: presetAmount, onSuccess }) {
   }, []);
 
   useEffect(() => {
+    if (show) {
+      setAmount(presetAmount || '');
+      setError(publicKey ? '' : 'Payment system not configured. Contact support.');
+    }
+  }, [show, presetAmount, publicKey]);
+
+  useEffect(() => {
     if (!show || !publicKey) return;
 
     if (window.PaystackPop) {
@@ -45,7 +52,7 @@ function PaymentModal({ show, onClose, amount: presetAmount, onSuccess }) {
       } else {
         toast.error(response.data.message || 'Verification failed');
       }
-    } catch (err) {
+    } catch {
       toast.error('Payment verification failed. Contact support.');
     } finally {
       setLoading(false);
@@ -67,27 +74,24 @@ function PaymentModal({ show, onClose, amount: presetAmount, onSuccess }) {
     setError('');
 
     try {
-      const userStr = localStorage.getItem('user');
-      let userEmail = 'customer@doormart.com';
-      let userName = 'Customer';
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        userEmail = user.email || userEmail;
-        userName = user.full_name || userName;
-      }
-
       const { data } = await paymentAPI.initializePayment({ amount: numAmount });
-      if (!data.success) throw new Error(data.message);
+      if (!data.success || !data.reference || !data.email || Number(data.amount) !== numAmount) {
+        throw new Error(data.message || 'Invalid payment initialization response');
+      }
 
       const handler = window.PaystackPop.setup({
         key: publicKey,
-        email: userEmail,
-        amount: numAmount * 100,
+        email: data.email,
+        amount: Number(data.amount) * 100,
         ref: data.reference,
-        metadata: {
-          custom_fields: [{ display_name: 'Customer Name', variable_name: 'customer_name', value: userName }]
+        callback: (res) => {
+          if (res.reference !== data.reference) {
+            setError('Payment reference did not match. Contact support before retrying.');
+            setLoading(false);
+            return;
+          }
+          verifyPayment(res.reference);
         },
-        callback: (res) => verifyPayment(res.reference),
         onClose: () => {
           setLoading(false);
           toast.error('Payment cancelled');
