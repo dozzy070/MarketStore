@@ -18,6 +18,9 @@ import {
   FaEnvelopeOpenText
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
+// motion is referenced in JSX; the base no-unused-vars rule doesn't detect JSX member expressions.
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import GoogleLoginButton from '../../components/GoogleLoginButton';
 
