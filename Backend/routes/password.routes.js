@@ -99,7 +99,7 @@ router.get('/verify-reset-token/:token', async (req, res) => {
 // ================================
 router.post('/reset-password', [
   body('token').notEmpty(),
-  body('password').isLength({ min: 6 }),
+  body('password').isLength({ min: 8 }),
   body('confirmPassword').custom((value, { req }) => {
     if (value !== req.body.password) throw new Error('Passwords do not match');
     return true;

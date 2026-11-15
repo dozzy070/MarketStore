@@ -4,7 +4,7 @@ import { Container, Row, Col, Card, Button, Badge, Navbar, Nav, Dropdown, Form, 
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FaStore, FaShoppingCart, FaStar, FaHeart, FaFilter, FaSearch, FaUser, FaTag,
-  FaSignInAlt, FaUserPlus, FaShoppingBag, FaCheckCircle, FaArrowRight,
+  FaShoppingBag, FaCheckCircle, FaArrowRight,
   FaBars, FaTimes, FaMapMarkerAlt, FaFacebook,
   FaTwitter, FaInstagram, FaTruck, FaShieldAlt, FaHeadset,
   FaExclamationTriangle, FaSync, FaChevronRight, FaChevronLeft,
@@ -19,7 +19,8 @@ import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { categoryAPI, newsletterAPI, reviewAPI, storeAPI } from '../../services/api';
+import { categoryAPI, newsletterAPI, reviewAPI, storeAPI, userAPI } from '../../services/api';
+import heroImage from '../../assets/doormart-hero.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -170,7 +171,7 @@ const FAQS = [
 // ─────────────────────────────────────────────
 function LandingPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoriesError, setCategoriesError] = useState(false);
@@ -206,11 +207,43 @@ function LandingPage() {
   useEffect(() => {
     loadProducts();
     loadCategories();
-    loadStores();
     loadFeaturedReviews();
     loadCart();
-    loadWishlist();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadStores();
+      const fetchWishlist = async () => {
+        try {
+          const response = await userAPI.getWishlist();
+          const products = response.data?.data;
+          if (!response.data?.success || !Array.isArray(products)) {
+            throw new Error('The wishlist API returned an invalid response.');
+          }
+          const productIds = products.map(product => product.id);
+          setWishlist(productIds);
+          localStorage.setItem('wishlist', JSON.stringify(productIds));
+        } catch (error) {
+          console.error('Failed to load wishlist:', error);
+          setWishlist([]);
+        }
+      };
+      void fetchWishlist();
+      return;
+    }
+
+    setStores([]);
+    setWishlist([]);
+    localStorage.removeItem('wishlist');
+    setStoresError(false);
+    setStoreStats({
+      total_stores: 0,
+      total_products: 0,
+      total_reviews: 0,
+      average_rating: 0
+    });
+  }, [isAuthenticated]);
 
   // Debounced search
   useEffect(() => {
@@ -290,11 +323,6 @@ function LandingPage() {
     const saved = localStorage.getItem('cart');
     if (saved) try { setCart(JSON.parse(saved)); } catch { setCart([]); }
   };
-  const loadWishlist = () => {
-    const saved = localStorage.getItem('wishlist');
-    if (saved) try { setWishlist(JSON.parse(saved)); } catch { setWishlist([]); }
-  };
-
   const addToCart = (product) => {
     if (!product?.id) return;
     const existing = cart.find(i => i.id === product.id);
@@ -306,11 +334,28 @@ function LandingPage() {
     toast.success(`${product.name} added to cart!`, { icon: '🛒' });
   };
 
-  const toggleWishlist = (id) => {
-    const newList = wishlist.includes(id) ? wishlist.filter(x => x !== id) : [...wishlist, id];
-    setWishlist(newList);
-    localStorage.setItem('wishlist', JSON.stringify(newList));
-    toast.success(wishlist.includes(id) ? 'Removed from wishlist' : 'Added to wishlist', { icon: '❤️' });
+  const toggleWishlist = async (id) => {
+    if (!isAuthenticated) {
+      toast.error('Sign in to save products to your wishlist.');
+      navigate('/login');
+      return;
+    }
+
+    const alreadySaved = wishlist.includes(id);
+    try {
+      if (alreadySaved) {
+        await userAPI.removeFromWishlist(id);
+      } else {
+        await userAPI.addToWishlist(id);
+      }
+      const newList = alreadySaved ? wishlist.filter(productId => productId !== id) : [...wishlist, id];
+      setWishlist(newList);
+      localStorage.setItem('wishlist', JSON.stringify(newList));
+      toast.success(alreadySaved ? 'Removed from wishlist' : 'Added to wishlist', { icon: '❤️' });
+    } catch (error) {
+      console.error('Failed to update wishlist:', error);
+      toast.error(error.response?.data?.message || 'Could not update wishlist.');
+    }
   };
 
   const handleNewsletterSubmit = async (e) => {
@@ -450,15 +495,11 @@ function LandingPage() {
       ═══════════════════════════════════════ */}
       <Navbar bg="white" expand="lg" className="py-3 shadow-sm sticky-top">
         <Container>
-          <Navbar.Brand as={Link} to="/" className="fw-bold fs-3 d-flex align-items-center">
+          <Navbar.Brand as={Link} to="/" className="fw-bold fs-2 d-flex align-items-center">
             <div className="brand-badge me-2"><FaStore size={20} /></div>
             <span className="text-dark">Door<span className="text-gold">Mart</span></span>
           </Navbar.Brand>
           <div className="d-flex align-items-center gap-3 order-lg-2">
-            <Button variant="outline-primary" className="position-relative d-flex align-items-center" onClick={() => navigate('/cart')}>
-              <FaShoppingCart className="me-2" /><span className="d-none d-sm-inline">Cart</span>
-              {getCartCount() > 0 && <Badge bg="danger" className="position-absolute top-0 start-100 translate-middle rounded-pill">{getCartCount()}</Badge>}
-            </Button>
             <Navbar.Toggle aria-controls="basic-navbar-nav" className="border-0 p-0" />
           </div>
           <Navbar.Collapse id="basic-navbar-nav">
@@ -470,30 +511,35 @@ function LandingPage() {
               <Nav.Link href="#testimonials">Reviews</Nav.Link>
               <Nav.Link href="#blog">Blog</Nav.Link>
             </Nav>
-            <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center mt-3 mt-lg-0 ms-lg-4 gap-3">
               {isAuthenticated ? (
                 <Dropdown align="end">
                   <Dropdown.Toggle variant="outline-primary" className="d-flex align-items-center">
-                    <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style={{ width: '30px', height: '30px' }}>
-                      {user?.full_name?.charAt(0) || <FaUser size={12} />}
-                    </div>
-                    {user?.full_name?.split(' ')[0] || 'User'}
+                    <FaUser className="me-2" /> Account
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
-                    <Dropdown.Item as={Link} to="/profile"><FaUser className="me-2" /> My Profile</Dropdown.Item>
+                    <Dropdown.Item as={Link} to={user?.role === 'admin' ? '/admin/profile' : user?.role === 'vendor' ? '/vendor/profile' : '/user/profile'}>
+                      <FaUser className="me-2" /> My Account
+                    </Dropdown.Item>
                     <Dropdown.Item as={Link} to="/user/orders"><FaShoppingBag className="me-2" /> My Orders</Dropdown.Item>
                     {user?.role === 'vendor' && <Dropdown.Item as={Link} to="/vendor/dashboard"><FaStore className="me-2" /> Vendor Dashboard</Dropdown.Item>}
                     {user?.role === 'admin' && <Dropdown.Item as={Link} to="/admin/dashboard"><FaShieldAlt className="me-2" /> Admin Panel</Dropdown.Item>}
                     <Dropdown.Divider />
-                    <Dropdown.Item onClick={() => { localStorage.clear(); window.location.href = '/'; }}>Logout</Dropdown.Item>
+                    <Dropdown.Item onClick={logout}>Logout</Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
               ) : (
-                <div className="d-flex gap-2">
-                  <Button variant="outline-primary" onClick={() => navigate('/login')}><FaSignInAlt className="me-2" /> Sign In</Button>
-                  <Button className="btn-primary-gradient" onClick={() => navigate('/register')}><FaUserPlus className="me-2" /> Register</Button>
-                </div>
+                <Button variant="outline-primary" onClick={() => navigate('/profile')}>
+                  <FaUser className="me-2" /> Account
+                </Button>
               )}
+              <Button variant="outline-danger" className="d-flex align-items-center" onClick={() => navigate('/user/wishlist')}>
+                <FaHeart className="me-2" /> Wishlist
+              </Button>
+              <Button variant="outline-primary" className="position-relative d-flex align-items-center" onClick={() => navigate('/cart')}>
+                <FaShoppingCart className="me-2" /> Cart
+                {getCartCount() > 0 && <Badge bg="danger" className="position-absolute top-0 start-100 translate-middle rounded-pill">{getCartCount()}</Badge>}
+              </Button>
             </div>
           </Navbar.Collapse>
         </Container>
@@ -511,11 +557,11 @@ function LandingPage() {
               <Col lg={6} className="mb-5 mb-lg-0 text-white">
                 <Badge className="hero-badge mb-4"><FaRocket className="me-2" /> {productsLoading ? 'Discover DoorMart' : `${products.length}+ products to explore`}</Badge>
                 <h1 className="display-3 fw-bold mb-4 lh-1">
-                  Shop Smarter.<br />
-                  <span className="text-gold">Save Bigger.</span><br />
-                  <span className="text-green">Live Better.</span>
+                  Shop Smarter<br />
+                  <span className="text-gold">Save Bigger</span><br />
+                  <span className="text-green">Live Better</span>
                 </h1>
-                <p className="lead mb-4 opacity-90">Explore products from DoorMart vendors, discover trusted stores, and use secure checkout.</p>
+                <p className="lead mb-4 opacity-90">Explore fairly products from DoorMart vendors, discover trusted stores, and use secure checkout.</p>
                 <div className="hero-search bg-white rounded-pill p-2 mb-4" style={{ maxWidth: '540px' }}>
                   <InputGroup>
                     <InputGroup.Text className="bg-transparent border-0"><FaSearch className="text-primary" /></InputGroup.Text>
@@ -529,33 +575,33 @@ function LandingPage() {
                   </InputGroup>
                 </div>
                 <div className="d-flex flex-wrap gap-4">
-                  <div className="d-flex align-items-center"><div className="hero-icon-chip"><FaTruck size={18} /></div><small className="ms-2">Free Shipping</small></div>
+                  <div className="d-flex align-items-center"><div className="hero-icon-chip"><FaTruck size={18} /></div><small className="ms-2">Amazing Sales</small></div>
                   <div className="d-flex align-items-center"><div className="hero-icon-chip"><FaShieldAlt size={18} /></div><small className="ms-2">Secure Payment</small></div>
                   <div className="d-flex align-items-center"><div className="hero-icon-chip"><FaClock size={18} /></div><small className="ms-2">24/7 Support</small></div>
                 </div>
               </Col>
               <Col lg={6} className="text-center position-relative">
-                {products.find(p => p.image_url) ? (
-                  <Motion.div
-                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.2 }}
-                    className="hero-image-wrap"
-                  >
-                    <img src={products.find(p => p.image_url).image_url} alt="Featured" className="img-fluid rounded-4 shadow-2xl" style={{ maxHeight: '520px', objectFit: 'cover', width: '100%' }} />
-                    <Motion.div className="hero-float-card hero-float-card-1" animate={{ y: [0, -10, 0] }} transition={{ duration: 3, repeat: Infinity }}>
-                      <FaCheckCircle className="text-success me-2" /> <strong>Live Product Listing</strong>
-                    </Motion.div>
-                    <Motion.div className="hero-float-card hero-float-card-2" animate={{ y: [0, 10, 0] }} transition={{ duration: 3.5, repeat: Infinity }}>
-                      <FaStar className="text-gold me-2" />
-                      <strong>{storeStats.average_rating > 0 ? `${storeStats.average_rating.toFixed(1)}/5` : 'Shopper reviews'}</strong>
-                      {storeStats.total_reviews > 0 && ` — ${storeStats.total_reviews.toLocaleString()} reviews`}
-                    </Motion.div>
+                <Motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 18 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+                  className="hero-image-wrap"
+                >
+                  <img
+                    src={heroImage}
+                    alt="DoorMart shopping bags and packages"
+                    className="hero-illustration"
+                    fetchPriority="high"
+                  />
+                  <Motion.div className="hero-float-card hero-float-card-1" animate={{ y: [0, -10, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
+                    <FaCheckCircle className="text-success me-2" /> <strong>Find your next favorite</strong>
                   </Motion.div>
-                ) : (
-                  <div className="hero-fallback">
-                    <FaShoppingBag size={90} className="mb-3" />
-                    <p className="lead mb-0">Your next great find starts here.</p>
-                  </div>
-                )}
+                  <Motion.div className="hero-float-card hero-float-card-2" animate={{ y: [0, 10, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}>
+                    <FaStar className="text-gold me-2" />
+                    <strong>{storeStats.average_rating > 0 ? `${storeStats.average_rating.toFixed(1)}/5` : 'Shopper favorites'}</strong>
+                    {storeStats.total_reviews > 0 && ` — ${storeStats.total_reviews.toLocaleString()} reviews`}
+                  </Motion.div>
+                </Motion.div>
               </Col>
             </Row>
           </Motion.div>
@@ -885,7 +931,7 @@ function LandingPage() {
             <div className="section-heading text-center mb-5">
               <Badge className="section-badge section-badge-gold mb-3">Why DoorMart</Badge>
               <h2 className="display-5 fw-bold">Everything You Need to Shop with Confidence</h2>
-              <p className="lead text-muted">Built with care. Backed by trust.</p>
+              <p className="lead text-muted">Your New and Fairly Used Products at Your Door Step.</p>
             </div>
           </Motion.div>
           <Row className="g-4">
@@ -947,7 +993,15 @@ function LandingPage() {
               <p className="lead text-muted">Explore stores from approved DoorMart vendors</p>
             </div>
           </Motion.div>
-          {storesError ? (
+          {!isAuthenticated ? (
+            <div className="text-center py-4">
+              <p className="text-muted">Sign in or create an account to browse approved vendor stores.</p>
+              <div className="d-flex justify-content-center gap-2">
+                <Button variant="outline-primary" onClick={() => navigate('/login')}>Sign In</Button>
+                <Button className="btn-primary-gradient" onClick={() => navigate('/register')}>Register</Button>
+              </div>
+            </div>
+          ) : storesError ? (
             <Alert variant="warning" className="text-center">
               Stores are temporarily unavailable.
               <Button variant="link" onClick={loadStores}>Try again</Button>
@@ -984,7 +1038,7 @@ function LandingPage() {
                         </small>
                         <small className="text-muted ms-2">({store.product_count} products)</small>
                       </div>
-                      <Button as={Link} to={`/stores/${store.id}`} className="btn-primary-gradient btn-sm w-100">
+                      <Button as={Link} to={`/store/${store.slug || store.id}`} className="btn-primary-gradient btn-sm w-100">
                         Visit Store
                       </Button>
                     </Card.Body>
@@ -1211,7 +1265,6 @@ function LandingPage() {
               <h6 className="fw-bold mb-3 text-gold">Company</h6>
               <ul className="list-unstyled">
                 <li className="mb-2"><Link to="/about" className="footer-link">About Us</Link></li>
-                <li className="mb-2"><Link to="/contact" className="footer-link">Contact</Link></li>
                 <li className="mb-2"><Link to="/faq" className="footer-link">FAQ</Link></li>
                 <li className="mb-2"><Link to="/terms" className="footer-link">Terms</Link></li>
               </ul>
@@ -1238,7 +1291,7 @@ function LandingPage() {
               <p className="text-white-50 small mb-0">&copy; {new Date().getFullYear()} DoorMart. All rights reserved.</p>
             </Col>
             <Col md={6} className="text-center text-md-end">
-              <small className="text-white-50">Made with <FaHeart className="text-danger" size={11} /> in Nigeria</small>
+              <small className="text-white-50">Your New and Fairly Used Products at Your Door Step <FaHeart className="text-danger" size={11} /> in Owerri, Imo Nigeria.</small>
             </Col>
           </Row>
         </Container>
@@ -1350,7 +1403,23 @@ function LandingPage() {
           justify-content: center;
           color: #fff;
         }
-        .hero-image-wrap { position: relative; }
+        .hero-image-wrap {
+          position: relative;
+          max-width: 560px;
+          margin: 0 auto;
+        }
+        .hero-illustration {
+          display: block;
+          width: 100%;
+          max-height: 520px;
+          object-fit: contain;
+          filter: drop-shadow(0 25px 35px rgba(0,0,0,0.2));
+          animation: heroImageFloat 6s ease-in-out infinite;
+        }
+        @keyframes heroImageFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-12px); }
+        }
         .hero-float-card {
           position: absolute;
           background: #fff;
@@ -1700,6 +1769,9 @@ function LandingPage() {
           .countdown-num { font-size: 1.2rem; }
           .hero-float-card { display: none; }
           .testimonial-wrap, .blog-card-wrap { width: 85vw; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .hero-illustration { animation: none; }
         }
       `}</style>
     </div>

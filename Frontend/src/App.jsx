@@ -34,7 +34,6 @@ import BuyerSafety from './pages/general/BuyerSafety';
 // ==================== STORE PAGES ====================
 import Stores from './pages/general/Stores';
 import StoreDetails from './pages/general/StoreDetails';
-import StoreProducts from './pages/general/StoreProducts';
 
 // ==================== HELP & SUPPORT PAGES ====================
 import HelpCenter from './pages/general/HelpCenter';
@@ -162,10 +161,11 @@ function App() {
         <Route path="/become-vendor" element={<BecomeVendor />} />
         <Route path="/buyer-safety" element={<BuyerSafety />} />
 
-        {/* Public Store Routes */}
-        <Route path="/stores" element={<Stores />} />
-        <Route path="/stores/:id" element={<StoreDetails />} />
-        <Route path="/stores/:id/products" element={<StoreProducts />} />
+        {/* Store browsing requires an authenticated account */}
+        <Route path="/stores" element={<PrivateRoute><Stores /></PrivateRoute>} />
+        <Route path="/store/:slug" element={<PrivateRoute><StoreDetails /></PrivateRoute>} />
+        <Route path="/stores/:id" element={<PrivateRoute><StoreDetails /></PrivateRoute>} />
+        <Route path="/stores/:id/products" element={<PrivateRoute><StoreDetails /></PrivateRoute>} />
 
         {/* ========== PUBLIC INFO PAGES ========== */}
         <Route path="/faq" element={<FAQ />} />
@@ -244,6 +244,9 @@ function App() {
 
         {/* Vendor Store Routes */}
         <Route path="/vendor/store" element={
+          <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><MyStore /></RoleRoute></PrivateRoute>
+        } />
+        <Route path="/vendor/store/setup" element={
           <PrivateRoute><RoleRoute allowedRoles={['vendor', 'admin']}><MyStore /></RoleRoute></PrivateRoute>
         } />
         <Route path="/vendor/store/settings" element={

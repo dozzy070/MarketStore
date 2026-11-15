@@ -25,10 +25,13 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
+import { userAPI } from '../../services/api';
 
 function CategoryProducts() {
   const { categoryId } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [hasLoaded, setHasLoaded] = useState(false); // track first fetch
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
@@ -58,8 +61,33 @@ function CategoryProducts() {
   useEffect(() => {
     fetchCategoryAndProducts();
     loadCart();
-    loadWishlist();
   }, [categoryId]);
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      if (!isAuthenticated) {
+        setWishlist([]);
+        localStorage.removeItem('wishlist');
+        return;
+      }
+
+      try {
+        const response = await userAPI.getWishlist();
+        const products = response.data?.data;
+        if (!response.data?.success || !Array.isArray(products)) {
+          throw new Error('The wishlist API returned an invalid response.');
+        }
+        const productIds = products.map(product => product.id);
+        setWishlist(productIds);
+        localStorage.setItem('wishlist', JSON.stringify(productIds));
+      } catch (error) {
+        console.error('Failed to load wishlist:', error);
+        setWishlist([]);
+      }
+    };
+
+    void fetchWishlist();
+  }, [isAuthenticated]);
 
   useEffect(() => {
     applyFilters();
@@ -96,17 +124,6 @@ function CategoryProducts() {
         setCart(JSON.parse(savedCart));
       } catch (e) {
         setCart([]);
-      }
-    }
-  };
-
-  const loadWishlist = () => {
-    const savedWishlist = localStorage.getItem('wishlist');
-    if (savedWishlist) {
-      try {
-        setWishlist(JSON.parse(savedWishlist));
-      } catch (e) {
-        setWishlist([]);
       }
     }
   };
@@ -206,21 +223,32 @@ function CategoryProducts() {
     });
   };
 
-  const toggleWishlist = (productId) => {
+  const toggleWishlist = async (productId) => {
     if (!productId) return;
-    
-    let newWishlist;
-    if (wishlist.includes(productId)) {
-      newWishlist = wishlist.filter(id => id !== productId);
-      toast.success('Removed from wishlist');
-    } else {
-      newWishlist = [...wishlist, productId];
-      toast.success('Added to wishlist', {
-        icon: '❤️'
-      });
+
+    if (!isAuthenticated) {
+      toast.error('Sign in to save products to your wishlist.');
+      navigate('/login');
+      return;
     }
-    setWishlist(newWishlist);
-    localStorage.setItem('wishlist', JSON.stringify(newWishlist));
+
+    const alreadySaved = wishlist.some(id => String(id) === String(productId));
+    try {
+      if (alreadySaved) {
+        await userAPI.removeFromWishlist(productId);
+      } else {
+        await userAPI.addToWishlist(productId);
+      }
+      const newWishlist = alreadySaved
+        ? wishlist.filter(id => String(id) !== String(productId))
+        : [...wishlist, productId];
+      setWishlist(newWishlist);
+      localStorage.setItem('wishlist', JSON.stringify(newWishlist));
+      toast.success(alreadySaved ? 'Removed from wishlist' : 'Added to wishlist', { icon: '❤️' });
+    } catch (error) {
+      console.error('Failed to update wishlist:', error);
+      toast.error(error.response?.data?.message || 'Could not update wishlist.');
+    }
   };
 
   const handleBrandToggle = (brand) => {

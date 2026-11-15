@@ -1,23 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Image, Form } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaShoppingCart, FaHeart, FaStar, FaWhatsapp, FaMinus, FaPlus } from 'react-icons/fa';
-import { productAPI } from '../../services/api';
+import { productAPI, userAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
     fetchProduct();
-  }, [id]);
+  }, [fetchProduct]);
 
-  const fetchProduct = async () => {
+  useEffect(() => {
+    const loadWishlistStatus = async () => {
+      if (!isAuthenticated || !product?.id) {
+        setIsWishlisted(false);
+        return;
+      }
+
+      try {
+        const response = await userAPI.getWishlist();
+        const savedProducts = response.data?.data;
+        if (!response.data?.success || !Array.isArray(savedProducts)) {
+          throw new Error('The wishlist API returned an invalid response.');
+        }
+        setIsWishlisted(savedProducts.some(savedProduct => String(savedProduct.id) === String(product.id)));
+      } catch (error) {
+        console.error('Failed to check wishlist status:', error);
+        setIsWishlisted(false);
+      }
+    };
+
+    void loadWishlistStatus();
+  }, [isAuthenticated, product?.id]);
+
+  const fetchProduct = useCallback(async () => {
     try {
       const response = await productAPI.getProduct(id);
       setProduct(response.data);
@@ -26,13 +52,13 @@ function ProductDetails() {
         const related = await productAPI.getProductsByCategory(response.data.category_id);
         setRelatedProducts(related.data.filter(p => p.id !== id).slice(0, 4));
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to load product');
       navigate('/');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
 
   const addToCart = () => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -46,6 +72,27 @@ function ProductDetails() {
 
     localStorage.setItem('cart', JSON.stringify(cart));
     toast.success('Added to cart!');
+  };
+
+  const toggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast.error('Sign in to save products to your wishlist.');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      if (isWishlisted) {
+        await userAPI.removeFromWishlist(product.id);
+      } else {
+        await userAPI.addToWishlist(product.id);
+      }
+      setIsWishlisted(!isWishlisted);
+      toast.success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+    } catch (error) {
+      console.error('Failed to update wishlist:', error);
+      toast.error(error.response?.data?.message || 'Could not update wishlist.');
+    }
   };
 
   if (loading) {
@@ -94,7 +141,11 @@ function ProductDetails() {
             <Button variant="primary" onClick={addToCart} disabled={product?.stock_quantity <= 0}>
               <FaShoppingCart className="me-2" /> Add to Cart
             </Button>
-            <Button variant="outline-danger">
+            <Button
+              variant={isWishlisted ? 'danger' : 'outline-danger'}
+              onClick={toggleWishlist}
+              aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+            >
               <FaHeart />
             </Button>
             <Button variant="success">

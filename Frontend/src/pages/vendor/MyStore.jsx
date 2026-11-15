@@ -28,12 +28,13 @@ import {
   FaExclamationTriangle
 } from 'react-icons/fa';
 import DashboardLayout from '../../components/DashboardLayout';
-import { vendorAPI, productAPI } from '../../services/api';
+import { storeAPI, vendorAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
 function MyStore() {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [editing, setEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [showLogoModal, setShowLogoModal] = useState(false);
@@ -47,6 +48,7 @@ function MyStore() {
   const [store, setStore] = useState({
     id: '',
     store_name: '',
+    tagline: '',
     store_description: '',
     store_logo: '',
     store_banner: '',
@@ -63,7 +65,10 @@ function MyStore() {
     shipping_policy: '',
     payment_methods: [],
     established: '',
-    business_hours: {}
+    business_hours: {},
+    slug: '',
+    status: 'draft',
+    suspended_reason: ''
   });
 
   const [formData, setFormData] = useState({ ...store });
@@ -98,7 +103,7 @@ function MyStore() {
     // Fetch products - FIX THIS PART
     let productsData = [];
     try {
-      const productsRes = await productAPI.getProducts();
+      const productsRes = await vendorAPI.getProducts();
       console.log('Products response:', productsRes);
       
       // Handle different response structures
@@ -126,17 +131,15 @@ function MyStore() {
     // Fetch stats - FIX THIS PART TOO
     let statsData = {};
     try {
-      const statsRes = await productAPI.getStats();
-      console.log('Stats response:', statsRes);
-      
-      // Handle different response structures
-      if (statsRes && statsRes.data) {
-        statsData = statsRes.data;
-      } else if (statsRes && statsRes.stats) {
-        statsData = statsRes.stats;
-      } else {
-        statsData = statsRes || {};
-      }
+      const statsRes = await vendorAPI.getDashboardStats();
+      const dashboardStats = statsRes?.data || {};
+      statsData = {
+        total_products: dashboardStats.totalProducts,
+        total_orders: dashboardStats.totalOrders,
+        total_customers: dashboardStats.totalCustomers,
+        average_rating: dashboardStats.averageRating,
+        total_reviews: dashboardStats.totalReviews
+      };
     } catch (err) {
       console.warn('Failed to fetch stats:', err);
     }
@@ -145,6 +148,7 @@ function MyStore() {
     setStore({
       id: profileData.id || '',
       store_name: profileData.store_name || '',
+      tagline: profileData.tagline || '',
       store_description: profileData.store_description || '',
       store_logo: profileData.store_logo || '',
       store_banner: profileData.store_banner || '',
@@ -161,13 +165,17 @@ function MyStore() {
       shipping_policy: profileData.shipping_policy || '',
       payment_methods: profileData.payment_methods || [],
       established: profileData.established || '',
-      business_hours: profileData.business_hours || {}
+      business_hours: profileData.business_hours || {},
+      slug: profileData.slug || '',
+      status: profileData.status || 'draft',
+      suspended_reason: profileData.suspended_reason || ''
     });
 
     // Update form data
     setFormData({
       id: profileData.id || '',
       store_name: profileData.store_name || '',
+      tagline: profileData.tagline || '',
       store_description: profileData.store_description || '',
       store_logo: profileData.store_logo || '',
       store_banner: profileData.store_banner || '',
@@ -184,8 +192,12 @@ function MyStore() {
       shipping_policy: profileData.shipping_policy || '',
       payment_methods: profileData.payment_methods || [],
       established: profileData.established || '',
-      business_hours: profileData.business_hours || {}
+      business_hours: profileData.business_hours || {},
+      slug: profileData.slug || '',
+      status: profileData.status || 'draft',
+      suspended_reason: profileData.suspended_reason || ''
     });
+    setEditing(profileData.status === 'draft');
 
     // Update products
     setProducts(Array.isArray(productsData) ? productsData.slice(0, 6) : []);
@@ -304,8 +316,10 @@ function MyStore() {
   const handleSaveStore = async () => {
     setSaving(true);
     try {
-      await vendorAPI.updateStore(formData);
-      setStore(formData);
+      const response = await vendorAPI.updateStore(formData);
+      const updatedStore = response.data?.data || formData;
+      setStore(updatedStore);
+      setFormData(updatedStore);
       setEditing(false);
       toast.success('Store updated successfully');
     } catch (error) {
@@ -313,6 +327,25 @@ function MyStore() {
       toast.error('Failed to update store');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePublishStore = async () => {
+    setPublishing(true);
+    try {
+      const response = await storeAPI.publishMyStore();
+      const publishedStore = response.data?.data;
+      if (!publishedStore) {
+        throw new Error('The server did not return the published store.');
+      }
+      setStore(publishedStore);
+      setFormData(publishedStore);
+      toast.success('Your store is live!');
+    } catch (publishError) {
+      console.error('Failed to publish store:', publishError);
+      toast.error(publishError.response?.data?.message || publishError.message || 'Failed to publish store');
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -330,8 +363,8 @@ function MyStore() {
           <p className="text-muted mb-0">Manage your store appearance and settings</p>
         </div>
         <div>
-          {store.id && (
-            <Button variant="outline-primary" as={Link} to={`/stores/${store.id}`} className="me-2">
+          {store.id && store.status === 'active' && (
+            <Button variant="outline-primary" as={Link} to={`/store/${store.slug || store.id}`} className="me-2">
               <FaEye className="me-2" /> View Public Store
             </Button>
           )}
@@ -349,6 +382,16 @@ function MyStore() {
               </Button>
             </div>
           )}
+          {(store.status === 'draft' || store.status === 'suspended') && !editing && (
+            <Button
+              variant="success"
+              onClick={handlePublishStore}
+              disabled={publishing}
+              className="ms-2"
+            >
+              {publishing ? 'Publishing...' : store.status === 'suspended' ? 'Resume Store' : 'Publish Store'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -362,6 +405,18 @@ function MyStore() {
               <p className="mb-0">{error}</p>
             </div>
           </div>
+        </Alert>
+      )}
+
+      {store.status === 'draft' && (
+        <Alert variant="warning">
+          <strong>Your store is still a draft.</strong> Complete the store name, tagline, and description, save your changes, then publish it to make it visible to buyers.
+        </Alert>
+      )}
+      {store.status === 'suspended' && (
+        <Alert variant="danger">
+          <strong>Your store has been suspended.</strong>
+          <p className="mb-0">Reason: {store.suspended_reason || 'No reason provided.'}</p>
         </Alert>
       )}
 
@@ -435,7 +490,12 @@ function MyStore() {
                   placeholder="Store Name"
                 />
               ) : (
-                <h3 className="mb-1">{store.store_name}</h3>
+                <>
+                  <h3 className="mb-1">{store.store_name}</h3>
+                  {store.status === 'active' && <Badge bg="success">Live</Badge>}
+                  {store.status === 'draft' && <Badge bg="warning" text="dark">Draft</Badge>}
+                  {store.status === 'suspended' && <Badge bg="danger">Suspended</Badge>}
+                </>
               )}
               
               <div className="d-flex gap-3 text-muted small">
@@ -497,6 +557,21 @@ function MyStore() {
           {activeTab === 'overview' && (
             <Row>
               <Col md={8}>
+                <h6 className="mb-3">Store Tagline</h6>
+                {editing ? (
+                  <Form.Control
+                    type="text"
+                    name="tagline"
+                    value={formData.tagline || ''}
+                    onChange={handleChange}
+                    maxLength={160}
+                    placeholder="A short message that describes your store"
+                    className="mb-4"
+                  />
+                ) : (
+                  <p className="text-muted mb-4">{store.tagline || 'No tagline set.'}</p>
+                )}
+
                 <h6 className="mb-3">About Store</h6>
                 {editing ? (
                   <Form.Control

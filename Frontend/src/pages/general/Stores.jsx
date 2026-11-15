@@ -312,7 +312,7 @@ function Stores() {
                             ) : <span />}
                             <small className="text-muted">{store.review_count} reviews</small>
                           </div>
-                              <Button as={Link} to={`/stores/${store.id}`} variant="primary" className="w-100">
+                              <Button as={Link} to={`/store/${store.slug || store.id}`} variant="primary" className="w-100">
                                 Visit Store <FaArrowRight className="ms-2" size={12} />
                               </Button>
                         </Card.Body>

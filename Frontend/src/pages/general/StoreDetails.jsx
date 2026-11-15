@@ -10,7 +10,8 @@ import toast from 'react-hot-toast';
 import { storeAPI } from '../../services/api';
 
 function StoreDetails() {
-  const { id } = useParams();
+  const { id, slug } = useParams();
+  const storeIdentifier = slug || id;
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
@@ -23,7 +24,7 @@ function StoreDetails() {
       setLoading(true);
       setLoadError('');
       try {
-        const response = await storeAPI.getStore(id);
+        const response = await storeAPI.getStore(storeIdentifier);
         const storeData = response.data?.data;
         if (!response.data?.success || !storeData?.store ||
             !Array.isArray(storeData.products) || !Array.isArray(storeData.reviews)) {
@@ -45,7 +46,7 @@ function StoreDetails() {
     };
 
     fetchStoreDetails();
-  }, [id]);
+  }, [storeIdentifier]);
 
   const handleAddToCart = (product) => {
     let cart;
@@ -125,6 +126,7 @@ function StoreDetails() {
                 )}
                 <div>
                   <h1 className="h2 mb-1">{store.name}</h1>
+                  {store.tagline && <p className="mb-1">{store.tagline}</p>}
                   <div className="d-flex align-items-center gap-3 flex-wrap">
                     <span><FaStar className="text-warning me-1" />{Number(store.rating) > 0 ? Number(store.rating).toFixed(1) : 'No ratings'} ({store.review_count} reviews)</span>
                     {store.verified && <Badge bg="success"><FaCheckCircle className="me-1" />Verified Store</Badge>}

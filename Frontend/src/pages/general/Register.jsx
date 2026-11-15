@@ -1,7 +1,7 @@
 // frontend/src/pages/Register.jsx
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Card, Alert, Spinner, InputGroup } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaUser, 
   FaEnvelope, 
@@ -255,6 +255,7 @@ const formatPhoneNumber = (phone) => {
 };
 
 function Register() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -355,8 +356,8 @@ function Register() {
       setError('Passwords do not match');
       return false;
     }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters');
       return false;
     }
     if (!agreedToTerms) {
@@ -436,7 +437,7 @@ function Register() {
             ? 'Vendor application submitted! We\'ll review it shortly.' 
             : 'Account created successfully!'
         );
-        navigate('/login');
+        navigate('/login', { state: location.state });
       } else if (response.data?.message?.includes('already exists')) {
         setError('An account with this email already exists. Please login instead.');
       } else {

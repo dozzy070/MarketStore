@@ -1,7 +1,7 @@
 // frontend/src/pages/VendorDashboard.jsx - No Loading Spinners
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Button, Badge, Table, Alert, Form } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   FaBox, 
   FaShoppingCart, 
@@ -24,8 +24,7 @@ import {
   FaChartLine
 } from 'react-icons/fa';
 import DashboardLayout from '../../components/DashboardLayout';
-import { vendorAPI } from '../../services/api';
-import { motion } from 'framer-motion';
+import { storeAPI, vendorAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { Line } from 'react-chartjs-2';
 import {
@@ -52,7 +51,9 @@ ChartJS.register(
 );
 
 function VendorDashboard() {
+  const navigate = useNavigate();
   const [error, setError] = useState(null);
+  const [store, setStore] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -154,6 +155,14 @@ function VendorDashboard() {
         };
         setProfile(newProfile);
         setFormData(newProfile);
+      }
+
+      try {
+        const storeResponse = await storeAPI.getMyStore();
+        setStore(storeResponse.data?.data || null);
+      } catch (storeError) {
+        console.error('Failed to load vendor store status:', storeError);
+        setStore(null);
       }
       
       // Fetch products
@@ -348,6 +357,44 @@ function VendorDashboard() {
               <p className="mb-0">{error}</p>
             </div>
           </div>
+        </Alert>
+      )}
+
+      {store?.status === 'draft' && (
+        <Alert variant="warning" className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div>
+            <strong>Your store is not live yet.</strong>
+            <p className="mb-0 small">
+              Add your logo, banner, tagline, and description, then publish your store to start selling.
+            </p>
+          </div>
+          <Button variant="primary" onClick={() => navigate('/vendor/store/setup')}>
+            Finish Setup
+          </Button>
+        </Alert>
+      )}
+
+      {store?.status === 'active' && (
+        <Alert variant="success" className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div>
+            <strong>Your store is live!</strong>
+            <p className="mb-0 small">Buyers can find your store at /store/{store.slug}.</p>
+          </div>
+          <Button variant="outline-success" onClick={() => navigate(`/store/${store.slug}`)}>
+            View Store
+          </Button>
+        </Alert>
+      )}
+
+      {store?.status === 'suspended' && (
+        <Alert variant="danger" className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div>
+            <strong>Your store has been suspended.</strong>
+            <p className="mb-0 small">Reason: {store.suspended_reason || 'No reason provided.'}</p>
+          </div>
+          <Button variant="outline-danger" onClick={() => navigate('/vendor/store/setup')}>
+            Review Store
+          </Button>
         </Alert>
       )}
 

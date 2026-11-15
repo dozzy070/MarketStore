@@ -1,13 +1,56 @@
 // backend/routes/vendorRoutes.js
 import express from 'express';
-import { authenticate } from '../middleware/authMiddleware.js';
+import multer from 'multer';
+import fs from 'fs/promises';
+import path from 'path';
+import { randomUUID } from 'crypto';
+import { fileURLToPath } from 'url';
+import { authenticate, isVendor } from '../middleware/authMiddleware.js';
 import pool from '../db/db.js';
 import { ensureStoreSchema, getVendorStore } from '../models/store.model.js';
 
 const router = express.Router();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const storeUploadDirectory = path.join(__dirname, '..', 'uploads', 'stores');
+const imageExtensions = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp'
+};
+const storeImageStorage = multer.diskStorage({
+  destination: (req, file, callback) => {
+    fs.mkdir(storeUploadDirectory, { recursive: true })
+      .then(() => callback(null, storeUploadDirectory), callback);
+  },
+  filename: (req, file, callback) => {
+    callback(null, `${req.user.id}-${randomUUID()}${imageExtensions[file.mimetype]}`);
+  }
+});
+
+const createStoreImageUpload = (fieldName, maxFileSize) => {
+  const upload = multer({
+    storage: storeImageStorage,
+    limits: { fileSize: maxFileSize },
+    fileFilter: (req, file, callback) => {
+      if (!imageExtensions[file.mimetype]) {
+        return callback(new Error('Only JPEG, PNG, and WebP images are allowed.'));
+      }
+      callback(null, true);
+    }
+  }).single(fieldName);
+
+  return (req, res, next) => {
+    upload(req, res, (error) => {
+      if (error) {
+        return res.status(400).json({ success: false, message: error.message });
+      }
+      next();
+    });
+  };
+};
 
 // Apply authentication to all vendor routes
-router.use(authenticate);
+router.use(authenticate, isVendor);
 
 router.get('/store', async (req, res) => {
   let client;
@@ -48,14 +91,21 @@ router.put('/store', async (req, res) => {
     client = await pool.connect();
     await client.query(`
       INSERT INTO vendor_stores (
-        vendor_id, store_name, store_description, store_logo, store_banner,
+        vendor_id, store_name, tagline, store_description, store_logo, store_banner,
         store_email, store_phone, store_address, store_website, social_media,
-        shipping_policy, payment_methods, established, business_hours, updated_at
+        shipping_policy, payment_methods, established, business_hours, status, slug, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12::jsonb, $13, $14::jsonb, NOW()
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12, $13::jsonb, $14, $15::jsonb,
+        'draft',
+        COALESCE(
+          NULLIF(TRIM(BOTH '-' FROM REGEXP_REPLACE(LOWER($2), '[^a-z0-9]+', '-', 'g')), ''),
+          'store'
+        ) || '-' || $1::text,
+        NOW()
       )
       ON CONFLICT (vendor_id) DO UPDATE SET
         store_name = EXCLUDED.store_name,
+        tagline = EXCLUDED.tagline,
         store_description = EXCLUDED.store_description,
         store_logo = EXCLUDED.store_logo,
         store_banner = EXCLUDED.store_banner,
@@ -68,10 +118,12 @@ router.put('/store', async (req, res) => {
         payment_methods = EXCLUDED.payment_methods,
         established = EXCLUDED.established,
         business_hours = EXCLUDED.business_hours,
+        slug = COALESCE(NULLIF(BTRIM(vendor_stores.slug), ''), EXCLUDED.slug),
         updated_at = NOW()
     `, [
       req.user.id,
       storeName.trim(),
+      req.body.tagline || null,
       req.body.store_description || null,
       req.body.store_logo || null,
       req.body.store_banner || null,
@@ -95,6 +147,53 @@ router.put('/store', async (req, res) => {
     client?.release();
   }
 });
+
+const handleStoreImageUpload = (fieldName, columnName) => async (req, res) => {
+  if (req.user.role !== 'vendor') {
+    if (req.file) await fs.unlink(req.file.path).catch((error) =>
+      console.error('Failed to remove unauthorized store image:', error)
+    );
+    return res.status(403).json({ success: false, message: 'Vendor access is required' });
+  }
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'An image file is required' });
+  }
+
+  let client;
+  try {
+    await ensureStoreSchema();
+    client = await pool.connect();
+    const backendUrl = process.env.BACKEND_URL || process.env.API_URL || `${req.protocol}://${req.get('host')}`;
+    const imageUrl = new URL(`/uploads/stores/${req.file.filename}`, backendUrl).toString();
+    const result = await client.query(
+      `UPDATE vendor_stores
+       SET ${columnName} = $2, updated_at = NOW()
+       WHERE vendor_id = $1
+       RETURNING vendor_id`,
+      [req.user.id, imageUrl]
+    );
+    if (!result.rows.length) {
+      await fs.unlink(req.file.path);
+      return res.status(404).json({ success: false, message: 'Store not found. Save your store details first.' });
+    }
+
+    const store = await getVendorStore(client, req.user.id);
+    res.json({ success: true, message: 'Store image updated successfully', data: store });
+  } catch (error) {
+    if (req.file) {
+      await fs.unlink(req.file.path).catch((cleanupError) =>
+        console.error('Failed to remove unsuccessful store image upload:', cleanupError)
+      );
+    }
+    console.error('Failed to update store image:', error);
+    res.status(500).json({ success: false, message: 'Failed to update store image' });
+  } finally {
+    client?.release();
+  }
+};
+
+router.put('/store/logo', createStoreImageUpload('logo', 2 * 1024 * 1024), handleStoreImageUpload('logo', 'store_logo'));
+router.put('/store/banner', createStoreImageUpload('banner', 5 * 1024 * 1024), handleStoreImageUpload('banner', 'store_banner'));
 
 /**
  * GET /api/vendor/dashboard/stats

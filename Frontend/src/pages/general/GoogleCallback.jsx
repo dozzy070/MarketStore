@@ -1,7 +1,7 @@
-// frontend/src/pages/GoogleCallback.jsx
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
 function GoogleCallback() {
@@ -9,36 +9,47 @@ function GoogleCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const userParam = searchParams.get('user');
+    const completeGoogleLogin = async () => {
+      const token = new URLSearchParams(window.location.hash.slice(1)).get('token');
+      window.history.replaceState(null, '', window.location.pathname);
 
-    if (token && userParam) {
-      try {
-        const user = JSON.parse(decodeURIComponent(userParam));
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        
-        toast.success(`Welcome, ${user.full_name}!`);
-        
-        // Redirect based on role
-        if (user.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else if (user.role === 'vendor') {
-          navigate('/vendor/dashboard');
-        } else {
-          navigate('/dashboard');
-        }
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        toast.error('Failed to complete Google login');
-        navigate('/login');
+      if (!token) {
+        const error = searchParams.get('error');
+        toast.error(error === 'google_account_not_registered'
+          ? 'This Google account is not linked to a registered account. Log in with your email and password.'
+          : 'Google login failed');
+        navigate('/login', { replace: true });
+        return;
       }
-    } else {
-      const error = searchParams.get('error');
-      toast.error(error || 'Google login failed');
-      navigate('/login');
-    }
-  }, [searchParams, navigate]);
+
+      try {
+        localStorage.setItem('token', token);
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const response = await axios.get(`${API_URL}/auth/verify`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const user = response.data?.user;
+        if (response.data?.success !== true || !user) {
+          throw new Error('Unable to verify Google login');
+        }
+
+        localStorage.setItem('user', JSON.stringify(user));
+        toast.success(`Welcome, ${user.full_name}!`);
+        navigate(user.role === 'admin'
+          ? '/admin/dashboard'
+          : user.role === 'vendor'
+            ? '/vendor/dashboard'
+            : '/dashboard', { replace: true });
+      } catch {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        toast.error('Google login failed. Please register or log in with your account.');
+        navigate('/login', { replace: true });
+      }
+    };
+
+    void completeGoogleLogin();
+  }, [navigate, searchParams]);
 
   return (
     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>

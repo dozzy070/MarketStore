@@ -1,12 +1,12 @@
 // backend/routes/vendor/payout.routes.js
 import express from 'express';
-import { authenticate } from '../../middleware/authMiddleware.js';
+import { authenticate, isVendor } from '../../middleware/authMiddleware.js';
 import pool from '../../db/db.js';
 import paystackService from '../../services/paystackService.js';
 
 const router = express.Router();
 
-router.use(authenticate);
+router.use(authenticate, isVendor);
 
 /**
  * GET /api/vendor/payouts/earnings

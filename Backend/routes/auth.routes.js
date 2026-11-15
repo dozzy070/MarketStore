@@ -7,12 +7,12 @@ import { body, validationResult } from 'express-validator';
 import pool from '../db/db.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import passport from '../db/passport.js';
+import { getJwtSecret } from '../utils/jwtSecret.js';
 import {
   sendWelcomeEmail,
   sendLoginAlertEmail,
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
-  sendEmail, // <-- added for test endpoint
 } from '../services/emailService.js';
 
 const router = express.Router();
@@ -35,27 +35,18 @@ const getLocationFromIp = async (ip) => {
   return 'Unknown Location';
 };
 
-// Test email endpoint (now working)
-router.get('/test-email', async (req, res) => {
-  console.log('🔥🔥🔥 TEST EMAIL endpoint hit');
-  const result = await sendEmail('your-email@example.com', 'Test Subject', '<h1>Test</h1>');
-  console.log('Test email result:', result);
-  res.json(result);
-});
-
 /* ================= REGISTER ================= */
 router.post('/register', [
-  body('fullName').notEmpty().withMessage('Full name is required'),
-  body('email').isEmail().withMessage('Valid email is required'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('fullName').trim().notEmpty().withMessage('Full name is required'),
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('password').isString().isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('role').optional().isIn(['user', 'vendor'])
 ], async (req, res) => {
-  console.log('📥 [REGISTER] Request received');
   let client;
+  let transactionStarted = false;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('❌ [REGISTER] Validation errors:', errors.array());
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
@@ -74,21 +65,22 @@ router.post('/register', [
     } = req.body;
 
     client = await pool.connect();
+    await client.query('BEGIN');
+    transactionStarted = true;
 
-    // Check existing user
-    const existing = await client.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await client.query('SELECT id FROM users WHERE email = $1', [normalizedEmail]);
     if (existing.rows.length > 0) {
-      console.log('❌ [REGISTER] Email already exists:', email);
+      await client.query('ROLLBACK');
+      transactionStarted = false;
       return res.status(400).json({ success: false, message: 'User with this email already exists' });
     }
 
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Insert user
     const isVendor = role === 'vendor';
-    const verified = role === 'user'; // auto-verify users; vendors need approval
+    const verified = role === 'user';
 
     const userResult = await client.query(
       `INSERT INTO users (
@@ -96,65 +88,42 @@ router.post('/register', [
         role, is_vendor, verified, created_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
       RETURNING id, full_name, email, role, is_vendor, verified, created_at`,
-      [fullName, email.toLowerCase(), hashedPassword, phoneNumber || null, location || null, role, isVendor, verified]
+      [fullName.trim(), normalizedEmail, hashedPassword, phoneNumber || null, location || null, role, isVendor, verified]
     );
 
     const user = userResult.rows[0];
-    console.log('✅ [REGISTER] User created successfully:', user.id);
 
-    // Vendor application (if needed)
     if (isVendor) {
-      const tableCheck = await client.query(`
-        SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'vendor_applications')
-      `);
-      if (tableCheck.rows[0].exists) {
-        await client.query(
-          `INSERT INTO vendor_applications (
-            user_id, business_name, business_address, business_phone,
-            tax_id, description, status, created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', NOW())`,
-          [
-            user.id,
-            businessName || fullName,
-            businessAddress || location,
-            businessPhone || phoneNumber,
-            taxId || null,
-            storeDescription || `${fullName}'s store`
-          ]
-        );
-        console.log('📝 [REGISTER] Vendor application created for user:', user.id);
-      } else {
-        console.warn('⚠️ [REGISTER] vendor_applications table does not exist. Skipping vendor application creation.');
-      }
+      await client.query(
+        `INSERT INTO vendor_applications (
+          user_id, business_name, business_address, business_phone,
+          tax_id, description, status, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', NOW())`,
+        [
+          user.id,
+          businessName || fullName,
+          businessAddress || location,
+          businessPhone || phoneNumber,
+          taxId || null,
+          storeDescription || `${fullName}'s store`
+        ]
+      );
     }
 
-    // ─── EMAIL SERVICE INTEGRATION ─────────────────────────────
-    console.log('📧 [REGISTER] About to send welcome email to:', user.email);
+    await client.query('COMMIT');
+    transactionStarted = false;
+
     try {
-      const emailResult = await sendWelcomeEmail(user);
-      console.log('📧 [REGISTER] Welcome email result:', emailResult);
+      await sendWelcomeEmail(user);
     } catch (emailErr) {
-      console.error('❌ [REGISTER] Welcome email error:', emailErr);
-      // Do not break registration flow if email fails
+      console.error('Registration welcome email failed:', emailErr);
     }
-    // ────────────────────────────────────────────────────────────
-
-    // Generate JWT
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        isVendor: user.is_vendor,
-        isAdmin: user.role === 'admin'
-      },
-      process.env.JWT_SECRET || 'your-secret-key-change-this',
-      { expiresIn: '7d' }
-    );
 
     res.status(201).json({
       success: true,
-      message: role === 'vendor' ? 'Vendor registration submitted for approval' : 'Registration successful',
+      message: role === 'vendor'
+        ? 'Vendor application submitted for approval. Log in after an administrator approves it.'
+        : 'Registration successful. Please log in.',
       user: {
         id: user.id,
         full_name: user.full_name,
@@ -162,11 +131,14 @@ router.post('/register', [
         role: user.role,
         verified: user.verified,
         is_vendor: user.is_vendor
-      },
-      token
+      }
     });
   } catch (error) {
-    console.error('❌ [REGISTER] Error:', error);
+    if (transactionStarted && client) await client.query('ROLLBACK');
+    if (error.code === '23505') {
+      return res.status(409).json({ success: false, message: 'User with this email already exists' });
+    }
+    console.error('Registration error:', error);
     res.status(500).json({ success: false, message: 'Server error during registration' });
   } finally {
     if (client) client.release();
@@ -176,7 +148,7 @@ router.post('/register', [
 /* ================= LOGIN ================= */
 router.post('/login', [
   body('email').isEmail().normalizeEmail(),
-  body('password').notEmpty()
+  body('password').isString().notEmpty()
 ], async (req, res) => {
   let client;
   try {
@@ -191,9 +163,15 @@ router.post('/login', [
     const result = await client.query(
       `SELECT u.*, va.status AS vendor_status, va.business_name
        FROM users u
-       LEFT JOIN vendor_applications va ON u.id = va.user_id
+       LEFT JOIN LATERAL (
+         SELECT status, business_name
+         FROM vendor_applications
+         WHERE user_id = u.id
+         ORDER BY created_at DESC
+         LIMIT 1
+       ) va ON true
        WHERE u.email = $1`,
-      [email.toLowerCase()]
+      [email.trim().toLowerCase()]
     );
 
     if (result.rows.length === 0) {
@@ -202,23 +180,19 @@ router.post('/login', [
 
     const user = result.rows[0];
 
-    // Vendor approval checks
+    const isValid = typeof user.password === 'string' && await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
     if (user.role === 'vendor' || user.is_vendor === true) {
-      if (user.vendor_status === 'pending') {
-        return res.status(403).json({ success: false, message: 'Your vendor account is pending approval' });
-      }
       if (user.vendor_status === 'rejected') {
         return res.status(403).json({ success: false, message: 'Your vendor application was rejected' });
       }
-      if (!user.verified && user.role === 'vendor') {
+      if (user.vendor_status !== 'approved' &&
+          !(user.vendor_status == null && user.verified)) {
         return res.status(403).json({ success: false, message: 'Your vendor account is pending approval' });
       }
-    }
-
-    // Validate password
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
     // ─── EMAIL SERVICE INTEGRATION ─────────────────────────────
@@ -237,7 +211,7 @@ router.post('/login', [
         isVendor: user.is_vendor || user.role === 'vendor',
         isAdmin: user.is_admin || user.role === 'admin'
       },
-      process.env.JWT_SECRET || 'your-secret-key-change-this',
+      getJwtSecret(),
       { expiresIn: '7d' }
     );
 
@@ -265,6 +239,21 @@ router.post('/login', [
   } finally {
     if (client) client.release();
   }
+});
+
+router.get('/verify', authenticate, (req, res) => {
+  res.json({
+    success: true,
+    user: {
+      id: req.user.id,
+      full_name: req.user.full_name,
+      email: req.user.email,
+      role: req.user.role,
+      is_vendor: req.user.is_vendor,
+      is_admin: req.user.is_admin,
+      verified: req.user.verified
+    }
+  });
 });
 
 /* ================= FORGOT PASSWORD ================= */
@@ -312,7 +301,7 @@ router.post('/forgot-password', [
 /* ================= RESET PASSWORD ================= */
 router.post('/reset-password', [
   body('token').notEmpty().withMessage('Reset token is required'),
-  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+  body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
 ], async (req, res) => {
   let client;
   try {
@@ -359,50 +348,49 @@ router.post('/reset-password', [
 });
 
 /* ================= CHECK EMAIL AVAILABILITY ================= */
-router.post('/check-email', (req, res) => {
-  console.log('📧 Check email request received');
-  console.log('Request body:', req.body);
-  console.log('Content-Type:', req.headers['content-type']);
-  
-  res.json({ exists: false, message: 'Test response' });
+router.post('/check-email', [
+  body('email').isEmail().withMessage('A valid email is required').normalizeEmail()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { email } = req.body;
+    const result = await pool.query('SELECT id FROM users WHERE email = $1', [String(email).toLowerCase()]);
+
+    res.json({
+      success: true,
+      exists: result.rows.length > 0,
+      message: result.rows.length > 0 ? 'Email is already registered.' : 'Email is available.'
+    });
+  } catch (error) {
+    console.error('❌ Check email error:', error);
+    res.status(500).json({ success: false, message: 'Server error while checking email' });
+  }
 });
 
 /* ================= GOOGLE OAUTH ================= */
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], prompt: 'select_account' }));
 
-router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/login' }), async (req, res) => {
+router.get('/google/callback', passport.authenticate('google', {
+  session: false,
+  failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_account_not_registered`
+}), async (req, res) => {
   try {
     const user = req.user;
     const token = user.token;
 
-    // ─── EMAIL SERVICE INTEGRATION ─────────────────────────────
-    // Send welcome email for OAuth users (if they are new)
-    if (user.isNew) {
-      sendWelcomeEmail(user).catch(err => console.error('OAuth welcome email error:', err));
-    }
-    // Login alert email
     const { ip, device } = getClientInfo(req);
     const location = await getLocationFromIp(ip);
     sendLoginAlertEmail(user, ip, device, location).catch(err => console.error('OAuth login alert error:', err));
-    // ────────────────────────────────────────────────────────────
 
-    delete user.password;
-    delete user.token;
-
-    const redirectUrl = `${process.env.FRONTEND_URL}/auth/google-callback?token=${token}&user=${encodeURIComponent(
-      JSON.stringify({
-        id: user.id,
-        full_name: user.full_name,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar,
-        verified: user.verified
-      })
-    )}`;
+    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/google-callback#token=${encodeURIComponent(token)}`;
     res.redirect(redirectUrl);
   } catch (error) {
     console.error('Google callback error:', error);
-    res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_auth_failed`);
   }
 });
 

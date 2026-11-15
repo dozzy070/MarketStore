@@ -1,17 +1,16 @@
 // frontend/src/components/SimpleLayout.jsx
 import React from 'react';
-import { Container, Navbar, Nav, Button, Row, Col } from 'react-bootstrap';
+import { Container, Navbar, Nav, Button, Row, Col, Dropdown } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaHome,
   FaBox, 
   FaUser, 
+  FaHeart,
   FaStore, 
   FaSignOutAlt, 
   FaHistory,
-  FaBell,
   FaSearch,
-  FaBars,
   FaShoppingCart
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
@@ -27,10 +26,6 @@ function SimpleLayout({ children }) {
     const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
     setCartCount(totalItems);
   }, []);
-
-  const handleLogout = () => {
-    logout(navigate);
-  };
 
   const navItems = [
     { path: '/', icon: FaHome, label: 'Home' },
@@ -71,7 +66,7 @@ function SimpleLayout({ children }) {
               })}
             </Nav>
             
-            <div className="d-flex align-items-center gap-3">
+            <div className="d-flex align-items-center gap-3 flex-wrap">
               {/* Search Bar */}
               <div className="position-relative d-none d-md-block">
                 <FaSearch className="position-absolute top-50 translate-middle-y ms-3 text-muted" />
@@ -89,50 +84,42 @@ function SimpleLayout({ children }) {
               </div>
 
               {/* Cart Icon */}
-              <Button 
-                variant="outline-primary" 
-                className="position-relative"
-                onClick={() => navigate('/cart')}
-              >
-                <FaShoppingCart />
-                {cartCount > 0 && (
-                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    {cartCount}
-                  </span>
+              <div className="d-flex align-items-center gap-2">
+                {user ? (
+                  <Dropdown align="end">
+                    <Dropdown.Toggle variant="outline-primary">
+                      <FaUser className="me-2" /> Account
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => navigate(user.role === 'admin' ? '/admin/profile' : user.role === 'vendor' ? '/vendor/profile' : '/user/profile')}>
+                        <FaUser className="me-2" /> My Account
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={logout}>
+                        <FaSignOutAlt className="me-2" /> Logout
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+                ) : (
+                  <Button variant="outline-primary" onClick={() => navigate('/profile')}>
+                    <FaUser className="me-2" /> Account
+                  </Button>
                 )}
-              </Button>
-
-              {user ? (
-                <div className="d-flex align-items-center gap-2">
-                  <span className="text-muted">
-                    Welcome, {user?.full_name?.split(' ')[0] || 'User'}
-                  </span>
-                  <Button 
-                    variant="outline-danger" 
-                    size="sm" 
-                    onClick={handleLogout}
-                  >
-                    <FaSignOutAlt className="me-1" /> Logout
-                  </Button>
-                </div>
-              ) : (
-                <div className="d-flex gap-2">
-                  <Button 
-                    variant="outline-primary" 
-                    size="sm"
-                    onClick={() => navigate('/login')}
-                  >
-                    Sign In
-                  </Button>
-                  <Button 
-                    variant="primary" 
-                    size="sm"
-                    onClick={() => navigate('/register')}
-                  >
-                    Register
-                  </Button>
-                </div>
-              )}
+                <Button variant="outline-danger" onClick={() => navigate('/user/wishlist')}>
+                  <FaHeart className="me-2" /> Wishlist
+                </Button>
+                <Button
+                  variant="outline-primary"
+                  className="position-relative"
+                  onClick={() => navigate('/cart')}
+                >
+                  <FaShoppingCart className="me-2" /> Cart
+                  {cartCount > 0 && (
+                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                      {cartCount}
+                    </span>
+                  )}
+                </Button>
+              </div>
             </div>
           </Navbar.Collapse>
         </Container>

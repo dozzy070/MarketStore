@@ -2,6 +2,7 @@
 import express from 'express';
 import { authenticate } from '../middleware/authMiddleware.js';
 import pool from '../db/db.js';
+import { ensureStoreSchema } from '../models/store.model.js';
 
 const router = express.Router();
 
@@ -30,6 +31,7 @@ async function columnExists(client, table, column) {
 router.get('/public', async (req, res) => {
   const client = await pool.connect();
   try {
+    await ensureStoreSchema();
     console.log('📦 Fetching public products...');
     
     // Check if products table exists
@@ -86,9 +88,17 @@ router.get('/public', async (req, res) => {
     query += `, p.category_id, p.vendor_id, p.created_at`;
     query += `, c.name as category_name, u.full_name as vendor_name`;
     query += ` FROM products p`;
+    query += ` INNER JOIN vendor_stores vs ON vs.vendor_id = p.vendor_id AND vs.status = 'active'`;
+    query += ` INNER JOIN users u ON u.id = p.vendor_id AND (u.role = 'vendor' OR u.is_vendor = true)`;
+    query += ` LEFT JOIN LATERAL (
+      SELECT status FROM vendor_applications
+      WHERE user_id = u.id
+      ORDER BY created_at DESC
+      LIMIT 1
+    ) va ON true`;
     query += ` LEFT JOIN categories c ON p.category_id = c.id`;
-    query += ` LEFT JOIN users u ON p.vendor_id = u.id`;
     query += ` WHERE 1=1`;
+    query += ` AND COALESCE(va.status, CASE WHEN u.verified THEN 'approved' ELSE 'pending' END) = 'approved'`;
     
     // Add status filter if column exists
     if (hasStatus) {
@@ -123,6 +133,7 @@ router.get('/public', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const client = await pool.connect();
   try {
+    await ensureStoreSchema();
     const { id } = req.params;
     
     // Check if products table exists
@@ -175,9 +186,17 @@ router.get('/:id', async (req, res) => {
     query += `, p.category_id, p.vendor_id, p.created_at`;
     query += `, c.name as category_name, u.full_name as vendor_name`;
     query += ` FROM products p`;
+    query += ` INNER JOIN vendor_stores vs ON vs.vendor_id = p.vendor_id AND vs.status = 'active'`;
+    query += ` INNER JOIN users u ON u.id = p.vendor_id AND (u.role = 'vendor' OR u.is_vendor = true)`;
+    query += ` LEFT JOIN LATERAL (
+      SELECT status FROM vendor_applications
+      WHERE user_id = u.id
+      ORDER BY created_at DESC
+      LIMIT 1
+    ) va ON true`;
     query += ` LEFT JOIN categories c ON p.category_id = c.id`;
-    query += ` LEFT JOIN users u ON p.vendor_id = u.id`;
     query += ` WHERE p.id = $1`;
+    query += ` AND COALESCE(va.status, CASE WHEN u.verified THEN 'approved' ELSE 'pending' END) = 'approved'`;
     
     const result = await client.query(query, [id]);
     
@@ -231,6 +250,7 @@ router.get('/:id', async (req, res) => {
 router.get('/', async (req, res) => {
   const client = await pool.connect();
   try {
+    await ensureStoreSchema();
     const { category, search, minPrice, maxPrice, sort = 'newest', limit = 20, offset = 0 } = req.query;
     
     // Check if products table exists
@@ -268,8 +288,16 @@ router.get('/', async (req, res) => {
     query += `, p.category_id, p.vendor_id, p.created_at`;
     query += `, c.name as category_name`;
     query += ` FROM products p`;
+    query += ` INNER JOIN vendor_stores vs ON vs.vendor_id = p.vendor_id AND vs.status = 'active'`;
+    query += ` INNER JOIN users u ON u.id = p.vendor_id AND (u.role = 'vendor' OR u.is_vendor = true)`;
+    query += ` LEFT JOIN LATERAL (
+      SELECT status FROM vendor_applications
+      WHERE user_id = u.id
+      ORDER BY created_at DESC
+      LIMIT 1
+    ) va ON true`;
     query += ` LEFT JOIN categories c ON p.category_id = c.id`;
-    query += ` WHERE 1=1`;
+    query += ` WHERE COALESCE(va.status, CASE WHEN u.verified THEN 'approved' ELSE 'pending' END) = 'approved'`;
     
     const params = [];
     let paramIndex = 1;
@@ -334,7 +362,15 @@ router.get('/', async (req, res) => {
     let countQuery = `
       SELECT COUNT(*) as total
       FROM products p
-      WHERE 1=1
+      INNER JOIN vendor_stores vs ON vs.vendor_id = p.vendor_id AND vs.status = 'active'
+      INNER JOIN users u ON u.id = p.vendor_id AND (u.role = 'vendor' OR u.is_vendor = true)
+      LEFT JOIN LATERAL (
+        SELECT status FROM vendor_applications
+        WHERE user_id = u.id
+        ORDER BY created_at DESC
+        LIMIT 1
+      ) va ON true
+      WHERE COALESCE(va.status, CASE WHEN u.verified THEN 'approved' ELSE 'pending' END) = 'approved'
     `;
     
     const countParams = [];

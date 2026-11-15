@@ -32,6 +32,23 @@ api.interceptors.response.use(
   }
 );
 
+export const checkBackendHealth = async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/health');
+    return {
+      available: response.status === 200,
+      error: null,
+      status: response.data,
+    };
+  } catch (error) {
+    return {
+      available: false,
+      error: error.response?.data?.error || error.message,
+      status: null,
+    };
+  }
+};
+
 // Auth API
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
@@ -46,6 +63,8 @@ export const userAPI = {
   updateProfile: (data) => api.put('/users/profile', data),
   getOrders: () => api.get('/users/orders'),
   getWishlist: () => api.get('/users/wishlist'),
+  addToWishlist: (productId) => api.post(`/users/wishlist/${productId}`),
+  removeFromWishlist: (productId) => api.delete(`/users/wishlist/${productId}`),
 };
 
 // Vendor API - Complete with all methods including payouts
@@ -75,6 +94,8 @@ export const vendorAPI = {
   // Store
   getStore: () => api.get('/vendor/store'),
   updateStore: (data) => api.put('/vendor/store', data),
+  updateStoreLogo: (data) => api.put('/vendor/store/logo', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  updateStoreBanner: (data) => api.put('/vendor/store/banner', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getStoreSettings: () => api.get('/vendor/store/settings'),
   updateStoreSettings: (data) => api.put('/vendor/store/settings', data),
   
@@ -177,6 +198,8 @@ export const newsletterAPI = {
 export const storeAPI = {
   getStores: (params) => api.get('/stores', { params }),
   getStore: (id) => api.get(`/stores/${id}`),
+  getMyStore: () => api.get('/stores/me'),
+  publishMyStore: () => api.patch('/stores/me/publish'),
 };
 
 // Cart API

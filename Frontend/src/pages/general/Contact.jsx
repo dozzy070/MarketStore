@@ -63,7 +63,7 @@ function Contact() {
                 <div>
                   <h6 className="mb-1">Email</h6>
                   <p className="text-muted mb-0">support@doormart.com</p>
-                  <p className="text-muted">info@doormart.com</p>
+                  <p className="text-muted">dozzydivinec@gmail.com</p>
                 </div>
               </div>
 
@@ -73,8 +73,8 @@ function Contact() {
                 </div>
                 <div>
                   <h6 className="mb-1">Phone</h6>
-                  <p className="text-muted mb-0">+234 801 234 5678</p>
-                  <p className="text-muted">+234 809 876 5432</p>
+                  <p className="text-muted mb-0">+234 706 667 2488</p>
+                  <p className="text-muted">+234 111 222 5555</p>
                 </div>
               </div>
 
@@ -85,8 +85,8 @@ function Contact() {
                 <div>
                   <h6 className="mb-1">Address</h6>
                   <p className="text-muted mb-0">
-                    123 Tech Avenue,<br />
-                    Ikeja, Lagos,<br />
+                    plot v9, Irete<br />
+                    Owerri, Imo,<br />
                     Nigeria
                   </p>
                 </div>

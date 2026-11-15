@@ -2,6 +2,7 @@
 import WebSocket from 'ws';
 import jwt from 'jsonwebtoken';
 import pool from './db/db.js';
+import { getJwtSecret } from './utils/jwtSecret.js';
 
 let wss;
 
@@ -12,7 +13,7 @@ export const initWebSocket = (server) => {
     // This is the correct way - WebSocket is the default import
     wss = new WebSocket.Server({ server });
     
-    wss.on('connection', (ws, req) => {
+    wss.on('connection', async (ws, req) => {
       console.log('🔌 New WebSocket connection attempt');
       
       const url = new URL(req.url, `http://${req.headers.host}`);
@@ -25,9 +26,36 @@ export const initWebSocket = (server) => {
       }
       
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
-        ws.userId = decoded.id;
-        ws.userRole = decoded.role;
+        const decoded = jwt.verify(token, getJwtSecret());
+        const account = await pool.query(`
+          SELECT u.id, u.role, u.is_vendor, u.verified, va.status AS vendor_status
+          FROM users u
+          LEFT JOIN LATERAL (
+            SELECT status
+            FROM vendor_applications
+            WHERE user_id = u.id
+            ORDER BY created_at DESC
+            LIMIT 1
+          ) va ON true
+          WHERE u.id = $1
+        `,
+          [decoded.id]
+        );
+        if (!account.rows.length) {
+          ws.close(1008, 'Account is not registered');
+          return;
+        }
+
+        const user = account.rows[0];
+        if ((user.role === 'vendor' || user.is_vendor) &&
+            (user.vendor_status === 'rejected' ||
+             (user.vendor_status !== 'approved' && !(user.vendor_status == null && user.verified)))) {
+          ws.close(1008, 'Vendor approval is required');
+          return;
+        }
+
+        ws.userId = user.id;
+        ws.userRole = user.role;
         
         console.log(`✅ WebSocket connected for user: ${ws.userId}`);
         

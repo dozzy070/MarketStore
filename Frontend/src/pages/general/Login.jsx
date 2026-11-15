@@ -1,7 +1,7 @@
 // frontend/src/pages/Login.jsx
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Card, Alert, Spinner, InputGroup, Modal } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaEnvelope,
   FaLock,
@@ -43,6 +43,7 @@ function Login() {
   const [resetSuccess, setResetSuccess] = useState(false);
 
   const { login } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
 
   // Show success toast if user came from registration
@@ -81,6 +82,13 @@ function Login() {
           localStorage.setItem('rememberEmail', email);
         } else {
           localStorage.removeItem('rememberEmail');
+        }
+
+        const returnPath = location.state?.from?.pathname;
+        if (typeof returnPath === 'string' && returnPath.startsWith('/') &&
+            !returnPath.startsWith('//') && returnPath !== '/login') {
+          navigate(returnPath, { replace: true });
+          return;
         }
 
         // Redirect based on role
@@ -137,8 +145,8 @@ function Login() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
       return;
     }
 
@@ -396,7 +404,7 @@ function Login() {
                         {/* Register Link - Single instance */}
                         <div className="text-center mt-4">
                           <span className="text-muted">Don't have an account? </span>
-                          <Link to="/register" className="text-decoration-none fw-bold">
+                          <Link to="/register" state={location.state} className="text-decoration-none fw-bold">
                             Create Account
                           </Link>
                         </div>

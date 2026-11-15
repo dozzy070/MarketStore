@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import { authenticate, isAdmin } from '../middleware/authMiddleware.js';
 import pool from '../db/db.js';
 import { sendVendorApprovalEmail, sendVendorRejectionEmail } from '../services/emailService.js';
+import { ensureStoreSchema } from '../models/store.model.js';
 
 
 const router = express.Router();
@@ -315,12 +316,25 @@ router.get('/vendors/:id', async (req, res) => {
 router.put('/vendors/:id/approve', async (req, res) => {
   const client = await pool.connect();
   const { id } = req.params;
+  let transactionStarted = false;
   
   try {
+    await ensureStoreSchema();
     await client.query('BEGIN');
+    transactionStarted = true;
     
     console.log(`📝 Approving vendor ID: ${id}`);
     
+    const applicationResult = await client.query(
+      `SELECT business_name, business_address, business_phone, description
+       FROM vendor_applications
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [id]
+    );
+    const application = applicationResult.rows[0] || {};
+
     // Update user to verified vendor
     const userResult = await client.query(
       `UPDATE users 
@@ -340,29 +354,66 @@ router.put('/vendors/:id/approve', async (req, res) => {
         message: 'User not found' 
       });
     }
-    
+    const user = userResult.rows[0];
+    const storeName = application.business_name?.trim() || user.full_name;
+
     // Update vendor application status
-    const appResult = await client.query(
+    await client.query(
       `UPDATE vendor_applications 
        SET status = 'approved', 
            reviewed_at = NOW()
        WHERE user_id = $1
-       RETURNING id`,
+      `,
       [id]
     );
-    
+
+    const storeResult = await client.query(`
+      INSERT INTO vendor_stores (
+        vendor_id, store_name, store_description, store_email, store_phone,
+        store_address, slug, status, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6,
+        COALESCE(
+          NULLIF(TRIM(BOTH '-' FROM REGEXP_REPLACE(LOWER($2), '[^a-z0-9]+', '-', 'g')), ''),
+          'store'
+        ) || '-' || $1::text,
+        'draft', NOW(), NOW()
+      )
+      ON CONFLICT (vendor_id) DO UPDATE SET
+        store_name = COALESCE(NULLIF(BTRIM(vendor_stores.store_name), ''), EXCLUDED.store_name),
+        store_description = COALESCE(NULLIF(BTRIM(vendor_stores.store_description), ''), EXCLUDED.store_description),
+        store_email = COALESCE(NULLIF(BTRIM(vendor_stores.store_email), ''), EXCLUDED.store_email),
+        store_phone = COALESCE(NULLIF(BTRIM(vendor_stores.store_phone), ''), EXCLUDED.store_phone),
+        store_address = COALESCE(NULLIF(BTRIM(vendor_stores.store_address), ''), EXCLUDED.store_address),
+        slug = COALESCE(NULLIF(BTRIM(vendor_stores.slug), ''), EXCLUDED.slug),
+        updated_at = NOW()
+      RETURNING store_name, slug, status
+    `, [
+      user.id,
+      storeName,
+      application.description || '',
+      user.email,
+      application.business_phone || user.phone_number || '',
+      application.business_address || user.location || ''
+    ]);
+
     await client.query('COMMIT');
+    transactionStarted = false;
     
-    console.log(`✅ Vendor approved: ${userResult.rows[0].email}`);
+    sendVendorApprovalEmail(user, storeName).catch(err =>
+      console.error('Approval email error:', err)
+    );
+    console.log(`✅ Vendor approved: ${user.email}`);
     
     res.json({
       success: true,
       message: 'Vendor approved successfully',
-      vendor: userResult.rows[0]
+      vendor: user,
+      store: storeResult.rows[0]
     });
     
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (transactionStarted) await client.query('ROLLBACK');
     console.error('❌ Error approving vendor:', error);
     res.status(500).json({ 
       success: false, 
@@ -379,20 +430,37 @@ router.put('/vendors/:id/reject', async (req, res) => {
   const client = await pool.connect();
   const { id } = req.params;
   const { reason } = req.body;
+  let transactionStarted = false;
   
   try {
     await client.query('BEGIN');
-    
-    console.log(`📝 Rejecting vendor ID: ${id}`);
-    
-    // Update vendor application
+    transactionStarted = true;
+
+    const userResult = await client.query(
+      `SELECT id, full_name, email FROM users WHERE id = $1`,
+      [id]
+    );
     const appResult = await client.query(
+      `SELECT business_name FROM vendor_applications
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [id]
+    );
+    if (userResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      transactionStarted = false;
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+    const businessName = appResult.rows[0]?.business_name || user.full_name;
+    await client.query(
       `UPDATE vendor_applications 
        SET status = 'rejected', 
            reviewed_at = NOW(), 
            rejection_reason = $1
-       WHERE user_id = $2
-       RETURNING id`,
+       WHERE user_id = $2`,
       [reason || 'No reason provided', id]
     );
     
@@ -407,8 +475,12 @@ router.put('/vendors/:id/reject', async (req, res) => {
     );
     
     await client.query('COMMIT');
+    transactionStarted = false;
     
-    console.log(`✅ Vendor rejected: ID ${id}`);
+    sendVendorRejectionEmail(user, businessName, reason).catch(err =>
+      console.error('Rejection email error:', err)
+    );
+    console.log(`✅ Vendor rejected: ${user.email}`);
     
     res.json({
       success: true,
@@ -416,7 +488,7 @@ router.put('/vendors/:id/reject', async (req, res) => {
     });
     
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (transactionStarted) await client.query('ROLLBACK');
     console.error('❌ Error rejecting vendor:', error);
     res.status(500).json({ 
       success: false, 
@@ -863,141 +935,5 @@ router.get('/analytics', async (req, res) => {
   }
 });
 
-
-// Approve vendor with email notification
-router.put('/vendors/:id/approve', async (req, res) => {
-  const client = await pool.connect();
-  const { id } = req.params;
-  
-  try {
-    await client.query('BEGIN');
-    
-    // Update user
-    const userResult = await client.query(
-      `UPDATE users 
-       SET verified = true, is_vendor = true, role = 'vendor', updated_at = NOW()
-       WHERE id = $1
-       RETURNING id, full_name, email`,
-      [id]
-    );
-    
-    if (userResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    // Get vendor application details
-    const appResult = await client.query(
-      `SELECT business_name FROM vendor_applications WHERE user_id = $1`,
-      [id]
-    );
-    
-    const user = userResult.rows[0];
-    const businessName = appResult.rows[0]?.business_name || user.full_name;
-    
-    // Update vendor application
-    await client.query(
-      `UPDATE vendor_applications 
-       SET status = 'approved', reviewed_at = NOW()
-       WHERE user_id = $1`,
-      [id]
-    );
-    
-    await client.query('COMMIT');
-    
-    // Send approval email (don't await to not block response)
-    sendVendorApprovalEmail(user, businessName).catch(err => 
-      console.error('Approval email error:', err)
-    );
-    
-    console.log(`✅ Vendor approved: ${user.email}`);
-    
-    res.json({
-      success: true,
-      message: 'Vendor approved successfully',
-      vendor: user
-    });
-    
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('❌ Error approving vendor:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to approve vendor'
-    });
-  } finally {
-    client.release();
-  }
-});
-
-// Reject vendor with email notification
-router.put('/vendors/:id/reject', async (req, res) => {
-  const client = await pool.connect();
-  const { id } = req.params;
-  const { reason } = req.body;
-  
-  try {
-    await client.query('BEGIN');
-    
-    // Get user and vendor details
-    const userResult = await client.query(
-      `SELECT id, full_name, email FROM users WHERE id = $1`,
-      [id]
-    );
-    
-    const appResult = await client.query(
-      `SELECT business_name FROM vendor_applications WHERE user_id = $1`,
-      [id]
-    );
-    
-    if (userResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    const user = userResult.rows[0];
-    const businessName = appResult.rows[0]?.business_name || user.full_name;
-    
-    // Update vendor application
-    await client.query(
-      `UPDATE vendor_applications 
-       SET status = 'rejected', reviewed_at = NOW(), rejection_reason = $1
-       WHERE user_id = $2`,
-      [reason || 'No reason provided', id]
-    );
-    
-    // Update user
-    await client.query(
-      `UPDATE users 
-       SET is_vendor = false, verified = false, updated_at = NOW()
-       WHERE id = $1`,
-      [id]
-    );
-    
-    await client.query('COMMIT');
-    
-    // Send rejection email
-    sendVendorRejectionEmail(user, businessName, reason).catch(err => 
-      console.error('Rejection email error:', err)
-    );
-    
-    console.log(`✅ Vendor rejected: ID ${id}`);
-    
-    res.json({
-      success: true,
-      message: 'Vendor application rejected'
-    });
-    
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('❌ Error rejecting vendor:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to reject vendor'
-    });
-  } finally {
-    client.release();
-  }
-});
 
 export default router;

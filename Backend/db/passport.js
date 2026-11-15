@@ -4,6 +4,7 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import pool from './db.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import { getJwtSecret } from '../utils/jwtSecret.js';
 
 dotenv.config(); // Ensure environment variables are loaded
 
@@ -29,7 +30,7 @@ const generateToken = (user) => {
       isVendor: user.is_vendor || false,
       isAdmin: user.is_admin || false
     },
-    process.env.JWT_SECRET || 'your-secret-key-change-this',
+    getJwtSecret(),
     { expiresIn: '7d' }
   );
 };
@@ -49,82 +50,39 @@ passport.use(
       try {
         console.log('📱 Google Profile received:', profile.displayName, profile.emails?.[0]?.value);
 
-        const email = profile.emails?.[0]?.value;
-        if (!email) {
+        const email = profile.emails?.[0]?.value?.trim().toLowerCase();
+        if (!email || profile._json?.email_verified !== true) {
           console.error('❌ No email found in Google profile');
-          return done(new Error('No email found from Google profile'), null);
+          return done(null, false);
         }
 
-        // Check if user already exists
-        let userResult = await client.query(
-          'SELECT * FROM users WHERE email = $1',
-          [email]
-        );
+        const userResult = await client.query(`
+          SELECT u.*, va.status AS vendor_status
+          FROM users u
+          LEFT JOIN LATERAL (
+            SELECT status
+            FROM vendor_applications
+            WHERE user_id = u.id
+            ORDER BY created_at DESC
+            LIMIT 1
+          ) va ON true
+          WHERE u.email = $1 AND u.google_id = $2
+        `, [email, profile.id]);
 
-        let user;
+        const user = userResult.rows[0];
+        if (!user) return done(null, false);
+        if ((user.role === 'vendor' || user.is_vendor) &&
+            (user.vendor_status === 'rejected' ||
+             (user.vendor_status !== 'approved' && !(user.vendor_status == null && user.verified)))) {
+          return done(null, false);
+        }
 
-        if (userResult.rows.length > 0) {
-          user = userResult.rows[0];
-          console.log(`✅ Existing user found: ${email}`);
-
-          // Update Google ID and avatar if they are not set
-          const updates = [];
-          const values = [];
-          let idx = 1;
-
-          if (!user.google_id) {
-            updates.push(`google_id = $${idx++}`);
-            values.push(profile.id);
-          }
-          if (!user.avatar && profile.photos?.[0]?.value) {
-            updates.push(`avatar = $${idx++}`);
-            values.push(profile.photos[0].value);
-          }
-          if (updates.length) {
-            updates.push(`updated_at = NOW()`);
-            values.push(user.id);
-            await client.query(
-              `UPDATE users SET ${updates.join(', ')} WHERE id = $${idx}`,
-              values
-            );
-            // Refresh user data after update
-            userResult = await client.query(
-              'SELECT * FROM users WHERE id = $1',
-              [user.id]
-            );
-            user = userResult.rows[0];
-          }
-        } else {
-          // Create new user
-          const fullName = profile.displayName || email.split('@')[0];
-          const avatar = profile.photos?.[0]?.value || null;
-          const result = await client.query(
-            `INSERT INTO users (
-              full_name,
-              email,
-              google_id,
-              avatar,
-              role,
-              verified,
-              provider,
-              provider_id,
-              created_at,
-              updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-            RETURNING *`,
-            [
-              fullName,
-              email,
-              profile.id,
-              avatar,
-              'user',           // default role
-              true,              // Google users are automatically verified
-              'google',
-              profile.id
-            ]
+        if (!user.avatar && profile.photos?.[0]?.value) {
+          await client.query(
+            'UPDATE users SET avatar = $1, updated_at = NOW() WHERE id = $2',
+            [profile.photos[0].value, user.id]
           );
-          user = result.rows[0];
-          console.log(`✅ New user created: ${email}`);
+          user.avatar = profile.photos[0].value;
         }
 
         // Generate JWT token and attach to user object

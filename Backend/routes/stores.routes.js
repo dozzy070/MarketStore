@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../db/db.js';
-import { ensureStoreSchema } from '../models/store.model.js';
+import { authenticate } from '../middleware/authMiddleware.js';
+import { ensureStoreSchema, getVendorStore } from '../models/store.model.js';
 
 const router = express.Router();
 
@@ -29,9 +30,14 @@ const getStoreQuery = (productFilters) => `
   SELECT
     u.id,
     COALESCE(NULLIF(BTRIM(vs.store_name), ''), NULLIF(BTRIM(va.business_name), ''), u.full_name) AS name,
-    COALESCE(NULLIF(BTRIM(vs.store_description), ''), NULLIF(BTRIM(va.description), ''), u.store_description, u.bio, '') AS description,
+    COALESCE(vs.tagline, '') AS tagline,
+    COALESCE(NULLIF(BTRIM(vs.store_description), ''), NULLIF(BTRIM(va.description), ''), u.bio, '') AS description,
     COALESCE(vs.store_logo, '') AS logo_url,
     COALESCE(vs.store_banner, '') AS cover_url,
+    vs.slug,
+    COALESCE(vs.status, 'active') AS status,
+    vs.published_at,
+    vs.suspended_reason,
     COALESCE(NULLIF(vs.store_address, ''), va.business_address, '') AS location,
     COALESCE(NULLIF(vs.store_email, ''), '') AS email,
     COALESCE(NULLIF(vs.store_phone, ''), va.business_phone, '') AS phone,
@@ -78,9 +84,82 @@ const getStoreQuery = (productFilters) => `
   LEFT JOIN vendor_stores vs ON vs.vendor_id = u.id
   WHERE (u.role = 'vendor' OR u.is_vendor = true)
     AND COALESCE(va.status, CASE WHEN u.verified THEN 'approved' ELSE 'pending' END) = 'approved'
+    AND COALESCE(vs.status, 'active') = 'active'
 `;
 
-router.get('/', async (req, res) => {
+router.get('/me', authenticate, async (req, res) => {
+  let client;
+  try {
+    await ensureStoreSchema();
+    client = await pool.connect();
+    const store = await getVendorStore(client, req.user.id);
+    if (!store) {
+      return res.status(404).json({ success: false, message: 'No store found for this vendor' });
+    }
+
+    res.json({ success: true, data: store });
+  } catch (error) {
+    console.error('Failed to fetch current vendor store:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch store' });
+  } finally {
+    client?.release();
+  }
+});
+
+router.patch('/me/publish', authenticate, async (req, res) => {
+  let client;
+  let transactionStarted = false;
+  try {
+    await ensureStoreSchema();
+    client = await pool.connect();
+    await client.query('BEGIN');
+    transactionStarted = true;
+
+    const storeResult = await client.query(
+      'SELECT * FROM vendor_stores WHERE vendor_id = $1 FOR UPDATE',
+      [req.user.id]
+    );
+    if (!storeResult.rows.length) {
+      await client.query('ROLLBACK');
+      transactionStarted = false;
+      return res.status(404).json({ success: false, message: 'No store found for this vendor' });
+    }
+
+    const store = storeResult.rows[0];
+    if (!store.store_name?.trim() || !store.tagline?.trim() || !store.store_description?.trim()) {
+      await client.query('ROLLBACK');
+      transactionStarted = false;
+      return res.status(400).json({
+        success: false,
+        message: 'Please fill in your store name, tagline, and description before publishing.'
+      });
+    }
+
+    await client.query(
+      `UPDATE vendor_stores
+       SET status = 'active',
+           suspended_reason = NULL,
+           published_at = COALESCE(published_at, NOW()),
+           updated_at = NOW()
+       WHERE vendor_id = $1
+      `,
+      [req.user.id]
+    );
+    const vendorStore = await getVendorStore(client, req.user.id);
+    await client.query('COMMIT');
+    transactionStarted = false;
+
+    res.json({ success: true, message: 'Store published!', data: vendorStore });
+  } catch (error) {
+    if (transactionStarted) await client.query('ROLLBACK');
+    console.error('Failed to publish vendor store:', error);
+    res.status(500).json({ success: false, message: 'Failed to publish store' });
+  } finally {
+    client?.release();
+  }
+});
+
+router.get('/', authenticate, async (req, res) => {
   let client;
   try {
     await ensureStoreSchema();
@@ -107,6 +186,7 @@ router.get('/', async (req, res) => {
           JOIN order_items oi ON oi.order_id = o.id
           JOIN products p ON p.id = oi.product_id
           JOIN users ou ON ou.id = p.vendor_id
+          JOIN vendor_stores ovs ON ovs.vendor_id = ou.id AND ovs.status = 'active'
           LEFT JOIN LATERAL (
             SELECT status
             FROM vendor_applications
@@ -123,6 +203,7 @@ router.get('/', async (req, res) => {
           FROM reviews r
           JOIN products p ON p.id = r.product_id
           JOIN users ru ON ru.id = p.vendor_id
+          JOIN vendor_stores rvs ON rvs.vendor_id = ru.id AND rvs.status = 'active'
           LEFT JOIN LATERAL (
             SELECT status
             FROM vendor_applications
@@ -139,6 +220,7 @@ router.get('/', async (req, res) => {
           FROM reviews r
           JOIN products p ON p.id = r.product_id
           JOIN users ru ON ru.id = p.vendor_id
+          JOIN vendor_stores rvs ON rvs.vendor_id = ru.id AND rvs.status = 'active'
           LEFT JOIN LATERAL (
             SELECT status
             FROM vendor_applications
@@ -160,6 +242,11 @@ router.get('/', async (req, res) => {
       ) va ON true
       WHERE (u.role = 'vendor' OR u.is_vendor = true)
         AND COALESCE(va.status, CASE WHEN u.verified THEN 'approved' ELSE 'pending' END) = 'approved'
+        AND EXISTS (
+          SELECT 1
+          FROM vendor_stores active_store
+          WHERE active_store.vendor_id = u.id AND active_store.status = 'active'
+        )
     `);
 
     res.json({
@@ -175,20 +262,15 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
-  const vendorId = Number.parseInt(req.params.id, 10);
-  if (!Number.isInteger(vendorId) || vendorId < 1) {
-    return res.status(400).json({ success: false, message: 'Invalid store ID' });
-  }
-
+router.get('/:id', authenticate, async (req, res) => {
   let client;
   try {
     await ensureStoreSchema();
     client = await pool.connect();
     const productFilters = await getProductVisibilityFilters(client);
     const storeResult = await client.query(
-      `${getStoreQuery(productFilters)} AND u.id = $1 LIMIT 1`,
-      [vendorId]
+      `${getStoreQuery(productFilters)} AND (u.id::text = $1 OR vs.slug = $1) LIMIT 1`,
+      [req.params.id]
     );
 
     if (!storeResult.rows.length) {
@@ -209,7 +291,7 @@ router.get('/:id', async (req, res) => {
       WHERE p.vendor_id = $1 ${productFilters}
       GROUP BY p.id
       ORDER BY p.created_at DESC
-    `, [vendorId]);
+    `, [storeResult.rows[0].id]);
 
     const reviews = await client.query(`
       SELECT
@@ -228,7 +310,7 @@ router.get('/:id', async (req, res) => {
         AND BTRIM(r.comment) <> ''
       ORDER BY r.created_at DESC
       LIMIT 20
-    `, [vendorId]);
+    `, [storeResult.rows[0].id]);
 
     res.json({
       success: true,
@@ -239,7 +321,7 @@ router.get('/:id', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(`Failed to fetch store ${vendorId}:`, error);
+    console.error(`Failed to fetch store ${req.params.id}:`, error);
     res.status(500).json({ success: false, message: 'Failed to fetch store details' });
   } finally {
     client?.release();

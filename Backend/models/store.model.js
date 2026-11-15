@@ -8,6 +8,7 @@ export const ensureStoreSchema = async () => {
       CREATE TABLE IF NOT EXISTS vendor_stores (
         vendor_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         store_name TEXT,
+        tagline TEXT,
         store_description TEXT,
         store_logo TEXT,
         store_banner TEXT,
@@ -20,10 +21,62 @@ export const ensureStoreSchema = async () => {
         payment_methods JSONB NOT NULL DEFAULT '[]'::jsonb,
         established TEXT,
         business_hours JSONB NOT NULL DEFAULT '{}'::jsonb,
+        slug TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        published_at TIMESTAMPTZ,
+        suspended_reason TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
-    `).then(() => undefined).catch((error) => {
+    `).then(async () => {
+      await pool.query(`
+        ALTER TABLE vendor_stores
+          ADD COLUMN IF NOT EXISTS tagline TEXT,
+          ADD COLUMN IF NOT EXISTS slug TEXT,
+          ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active',
+          ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ,
+          ADD COLUMN IF NOT EXISTS suspended_reason TEXT
+      `);
+      await pool.query(`
+        INSERT INTO vendor_stores (
+          vendor_id, store_name, store_description, store_email, store_phone,
+          store_address, status, created_at, updated_at
+        )
+        SELECT
+          u.id,
+          COALESCE(NULLIF(BTRIM(va.business_name), ''), u.full_name),
+          COALESCE(va.description, ''),
+          u.email,
+          COALESCE(va.business_phone, u.phone_number, ''),
+          COALESCE(va.business_address, u.location, ''),
+          'active',
+          NOW(),
+          NOW()
+        FROM users u
+        LEFT JOIN LATERAL (
+          SELECT business_name, description, business_phone, business_address, status
+          FROM vendor_applications
+          WHERE user_id = u.id
+          ORDER BY created_at DESC
+          LIMIT 1
+        ) va ON true
+        WHERE (u.role = 'vendor' OR u.is_vendor = true)
+          AND COALESCE(va.status, CASE WHEN u.verified THEN 'approved' ELSE 'pending' END) = 'approved'
+        ON CONFLICT (vendor_id) DO NOTHING
+      `);
+      await pool.query(`
+        UPDATE vendor_stores
+        SET slug = COALESCE(
+          NULLIF(TRIM(BOTH '-' FROM REGEXP_REPLACE(LOWER(COALESCE(store_name, '')), '[^a-z0-9]+', '-', 'g')), ''),
+          'store'
+        ) || '-' || vendor_id::text
+        WHERE slug IS NULL OR BTRIM(slug) = ''
+      `);
+      await pool.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS vendor_stores_slug_unique
+        ON vendor_stores (slug)
+      `);
+    }).then(() => undefined).catch((error) => {
       schemaPromise = undefined;
       throw error;
     });
@@ -37,9 +90,14 @@ export const getVendorStore = async (client, vendorId) => {
     SELECT
       u.id,
       COALESCE(NULLIF(BTRIM(vs.store_name), ''), NULLIF(BTRIM(va.business_name), ''), u.full_name) AS store_name,
-      COALESCE(NULLIF(BTRIM(vs.store_description), ''), NULLIF(BTRIM(va.description), ''), u.store_description, u.bio, '') AS store_description,
+      COALESCE(vs.tagline, '') AS tagline,
+      COALESCE(NULLIF(BTRIM(vs.store_description), ''), NULLIF(BTRIM(va.description), ''), u.bio, '') AS store_description,
       COALESCE(vs.store_logo, '') AS store_logo,
       COALESCE(vs.store_banner, '') AS store_banner,
+      COALESCE(vs.slug, '') AS slug,
+      COALESCE(vs.status, 'active') AS status,
+      vs.published_at,
+      vs.suspended_reason,
       COALESCE(NULLIF(vs.store_email, ''), u.email) AS store_email,
       COALESCE(NULLIF(vs.store_phone, ''), u.phone_number, va.business_phone, '') AS store_phone,
       COALESCE(NULLIF(vs.store_address, ''), va.business_address, u.location, '') AS store_address,

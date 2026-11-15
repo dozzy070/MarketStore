@@ -27,6 +27,7 @@ import reviewsRoutes from './routes/reviews.routes.js';
 import newsletterRoutes from './routes/newsletter.routes.js';
 import storesRoutes from './routes/stores.routes.js';
 import passport from './db/passport.js';
+import { getJwtSecret } from './utils/jwtSecret.js';
 
 import pool from './db/db.js';
 
@@ -35,6 +36,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+getJwtSecret();
 
 // ==================== Environment Check ====================
 const requiredEnv = [
@@ -92,6 +94,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(passport.initialize());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Request logging
@@ -118,18 +121,6 @@ app.use('/api/admin', adminPayoutRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/stores', storesRoutes);
-app.use(passport.initialize());
-
-app.get('/test-email', async (req, res) => {
-  try {
-    const { sendEmail } = await import('./services/emailService.js');
-    const result = await sendEmail('dozzydivinec@gmail.com', 'Test Subject', '<h1>Test email</h1>');
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // Health check
 app.get('/health', async (req, res) => {
